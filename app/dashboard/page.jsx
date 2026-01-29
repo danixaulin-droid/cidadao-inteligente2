@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -30,7 +30,7 @@ function timeAgoBR(iso) {
     const diff = Math.max(0, now - d);
 
     const min = Math.floor(diff / 60000);
-    if (min < 1) return "agora";
+    if (min < 1) return "agora há pouco";
     if (min < 60) return `há ${min} min`;
 
     const h = Math.floor(min / 60);
@@ -68,9 +68,8 @@ export default function DashboardPage() {
 
   const [topic, setTopic] = useState("all");
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // rows = mensagens (histórico). A UI agrupa como “conversas” (session_id)
+  // rows = histórico (mensagens). A UI mostra como “conversas” (session_id)
   const [rows, setRows] = useState([]);
   const [loadingRows, setLoadingRows] = useState(false);
   const [msg, setMsg] = useState("");
@@ -86,20 +85,6 @@ export default function DashboardPage() {
   const [thread, setThread] = useState([]); // [{role, content, created_at}]
   const [loadingThread, setLoadingThread] = useState(false);
 
-  // mobile
-  const [mobileView, setMobileView] = useState("list"); // list | thread
-  const endThreadRef = useRef(null);
-
-  // debounce busca
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 350);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  useEffect(() => {
-    endThreadRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread, loadingThread]);
-
   async function logout() {
     await supabase.auth.signOut();
     router.push("/login");
@@ -113,10 +98,14 @@ export default function DashboardPage() {
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
 
-    if (selectedTopic && selectedTopic !== "all") q = q.eq("topic", selectedTopic);
+    if (selectedTopic && selectedTopic !== "all") {
+      q = q.eq("topic", selectedTopic);
+    }
 
     const s = (search || "").trim();
-    if (s) q = q.or(`user_message.ilike.%${s}%,assistant_message.ilike.%${s}%`);
+    if (s) {
+      q = q.or(`user_message.ilike.%${s}%,assistant_message.ilike.%${s}%`);
+    }
 
     return q;
   }
@@ -132,7 +121,7 @@ export default function DashboardPage() {
     const to = from + PAGE_SIZE - 1;
 
     try {
-      const q = buildBaseQuery(userId, topic, debouncedQuery).range(from, to);
+      const q = buildBaseQuery(userId, topic, query).range(from, to);
       const { data, error } = await q;
 
       if (error) {
@@ -195,8 +184,6 @@ export default function DashboardPage() {
     return TOPIC_LABEL[t] || "Geral";
   }, [lastConv]);
 
-  const totalMsgs = useMemo(() => rows.length, [rows.length]);
-
   function continueLink(sessionId, topicValue) {
     const t = (topicValue || "geral").toLowerCase();
     if (!sessionId || sessionId === "sem-session") return `/assistente/chat?topic=${encodeURIComponent(t)}`;
@@ -208,7 +195,6 @@ export default function DashboardPage() {
 
     setLoadingThread(true);
     setMsg("");
-
     try {
       const { data, error } = await supabase
         .from("chat_history")
@@ -216,7 +202,7 @@ export default function DashboardPage() {
         .eq("user_id", userId)
         .eq("session_id", sessionId)
         .order("created_at", { ascending: true })
-        .limit(400);
+        .limit(200);
 
       if (error) throw error;
 
@@ -239,9 +225,6 @@ export default function DashboardPage() {
     setSelectedSession(c.session_id);
     setSelectedTopic((c.topic || "geral").toLowerCase());
     loadThread(c.session_id);
-
-    // no mobile, abre o thread
-    setMobileView("thread");
   }
 
   async function deleteConversation(sessionId) {
@@ -254,11 +237,7 @@ export default function DashboardPage() {
     if (!ok) return;
 
     try {
-      const { error } = await supabase
-        .from("chat_history")
-        .delete()
-        .eq("user_id", userId)
-        .eq("session_id", sessionId);
+      const { error } = await supabase.from("chat_history").delete().eq("user_id", userId).eq("session_id", sessionId);
 
       if (error) throw error;
 
@@ -266,7 +245,6 @@ export default function DashboardPage() {
       if (selectedSession === sessionId) {
         setSelectedSession("");
         setThread([]);
-        setMobileView("list");
       }
     } catch (e) {
       alert(e?.message || "Falha ao excluir conversa.");
@@ -276,7 +254,7 @@ export default function DashboardPage() {
   async function clearAllConversations() {
     if (!userId) return;
 
-    const ok = confirm("ATENÇÃO: isso vai apagar TODAS as conversas do seu histórico. Deseja continuar?");
+    const ok = confirm("ATENÇÃO: isso vai apagar TODAS as conversas do seu histórico (todas as sessões). Deseja continuar?");
     if (!ok) return;
 
     try {
@@ -288,7 +266,6 @@ export default function DashboardPage() {
       setThread([]);
       setHasMore(false);
       setPage(0);
-      setMobileView("list");
     } catch (e) {
       alert(e?.message || "Falha ao limpar tudo.");
     }
@@ -316,7 +293,6 @@ export default function DashboardPage() {
       setHasMore(true);
       setSelectedSession("");
       setThread([]);
-      setMobileView("list");
     }
 
     boot();
@@ -331,20 +307,17 @@ export default function DashboardPage() {
     setHasMore(true);
     setSelectedSession("");
     setThread([]);
-    setMobileView("list");
     loadHistory({ reset: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, topic, debouncedQuery]);
+  }, [userId, topic, query]);
 
   // auto-seleciona a conversa mais recente (desktop)
   useEffect(() => {
     if (!conversations.length) return;
     if (selectedSession) return;
-
     const first = conversations[0];
     if (!first?.session_id) return;
     if (first.session_id === "sem-session") return;
-
     setSelectedSession(first.session_id);
     setSelectedTopic((first.topic || "geral").toLowerCase());
     loadThread(first.session_id);
@@ -362,13 +335,10 @@ export default function DashboardPage() {
     );
   }
 
-  const showList = mobileView === "list";
-  const showThread = mobileView === "thread";
-
   return (
     <main className="container" style={{ maxWidth: 1120 }}>
-      {/* ===== TOP BAR (AI vibe) ===== */}
-      <div className="card heroGlow" style={{ padding: 16, marginBottom: 12 }}>
+      {/* Top bar */}
+      <div className="card" style={{ padding: 14, marginBottom: 12 }}>
         <div
           style={{
             display: "flex",
@@ -379,13 +349,11 @@ export default function DashboardPage() {
           }}
         >
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ margin: 0, fontSize: 34, letterSpacing: -0.4 }}>Dashboard</h1>
-
-            <div className="muted" style={{ fontSize: 13, marginTop: 8 }}>
+            <h1 style={{ margin: 0 }}>Dashboard</h1>
+            <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
               Logado como: <b style={{ color: "var(--text)" }}>{email}</b>
             </div>
-
-            <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+            <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
               {lastConv ? (
                 <>
                   Última conversa: <b style={{ color: "var(--text)" }}>{lastTopicLabel}</b> •{" "}
@@ -398,11 +366,8 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <a className="btn btnPrimary" href="/assistente">
+            <a className="btn" href="/assistente">
               + Nova conversa
-            </a>
-            <a className="btn" href="/planos">
-              Planos
             </a>
             {isAdmin && (
               <a className="btn" href="/admin">
@@ -415,65 +380,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* mini métricas */}
-        <div
-          style={{
-            marginTop: 14,
-            display: "grid",
-            gap: 10,
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          }}
-        >
-          <div className="card" style={{ padding: 12, background: "rgba(255,255,255,0.03)" }}>
-            <div className="muted" style={{ fontSize: 12 }}>Conversas</div>
-            <div style={{ fontWeight: 950, fontSize: 18 }}>{conversations.length}</div>
-          </div>
-          <div className="card" style={{ padding: 12, background: "rgba(255,255,255,0.03)" }}>
-            <div className="muted" style={{ fontSize: 12 }}>Mensagens carregadas</div>
-            <div style={{ fontWeight: 950, fontSize: 18 }}>{totalMsgs}</div>
-          </div>
-          <div className="card" style={{ padding: 12, background: "rgba(255,255,255,0.03)" }}>
-            <div className="muted" style={{ fontSize: 12 }}>Filtro atual</div>
-            <div style={{ fontWeight: 900, fontSize: 14 }}>
-              {(topic === "all" ? "Todos os temas" : TOPIC_LABEL[topic] || topic) + (debouncedQuery ? " • busca" : "")}
-            </div>
-          </div>
-        </div>
-
         {msg ? (
-          <div className="statusChip err" style={{ marginTop: 12 }}>
+          <div className="statusChip err" style={{ marginTop: 10 }}>
             {msg}
           </div>
         ) : null}
       </div>
 
-      {/* ===== LAYOUT: sidebar + thread (com mobile real) ===== */}
-      <div
-        className="dashGrid"
-        style={{
-          display: "grid",
-          width: "100%",
-          maxWidth: "100%",
-          overflowX: "hidden",
-          gap: 12,
-          marginTop: 14,
-        }}
-      >
+      {/* Grid */}
+      <div className="dashGrid" style={{ gap: 12, marginTop: 14 }}>
         {/* SIDEBAR */}
-        <section
-          className="card"
-          style={{
-            padding: 12,
-            height: "calc(100vh - 260px)",
-            minHeight: 520,
-            overflow: "hidden",
-            display: showList ? "block" : undefined,
-          }}
-        >
+        <section className="card dashPanel">
           <div style={{ display: "grid", gap: 10, height: "100%" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 950, fontSize: 16 }}>Conversas</div>
+                <div style={{ fontWeight: 900 }}>Conversas</div>
                 <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
                   {conversations.length} conversa(s) no filtro
                 </div>
@@ -496,20 +417,10 @@ export default function DashboardPage() {
                 <option value="geral">Geral</option>
               </select>
 
-              <input
-                className="input"
-                placeholder="Buscar conversas…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+              <input className="input" placeholder="Buscar conversas…" value={query} onChange={(e) => setQuery(e.target.value)} />
 
               <div style={{ display: "flex", gap: 10 }}>
-                <button
-                  className="btn"
-                  onClick={() => loadHistory({ reset: true })}
-                  disabled={loadingRows}
-                  style={{ flex: 1 }}
-                >
+                <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={loadingRows} style={{ flex: 1 }}>
                   {loadingRows ? "Buscando…" : "Buscar"}
                 </button>
                 {hasMore ? (
@@ -521,20 +432,8 @@ export default function DashboardPage() {
             </div>
 
             {/* lista */}
-            <div
-              style={{
-                marginTop: 4,
-                overflow: "auto",
-                paddingRight: 4,
-                display: "grid",
-                gap: 8,
-              }}
-            >
-              {loadingRows && conversations.length === 0 ? (
-                <div className="muted" style={{ padding: 8 }}>
-                  Carregando conversas…
-                </div>
-              ) : conversations.length === 0 ? (
+            <div className="dashList">
+              {conversations.length === 0 ? (
                 <div className="muted" style={{ padding: 8 }}>
                   Nenhuma conversa encontrada.
                 </div>
@@ -552,8 +451,8 @@ export default function DashboardPage() {
                       key={sid}
                       style={{
                         borderRadius: 14,
-                        border: active ? "1px solid rgba(16,163,127,0.55)" : "1px solid rgba(255,255,255,0.10)",
-                        background: active ? "rgba(16,163,127,0.10)" : "rgba(255,255,255,0.04)",
+                        border: active ? "1px solid rgba(124,58,237,0.55)" : "1px solid rgba(255,255,255,0.10)",
+                        background: active ? "rgba(124,58,237,0.10)" : "rgba(255,255,255,0.04)",
                         padding: 10,
                         display: "grid",
                         gap: 6,
@@ -586,7 +485,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
 
-                        <div style={{ fontWeight: 950, lineHeight: 1.2 }}>{title}</div>
+                        <div style={{ fontWeight: 850, lineHeight: 1.2 }}>{title}</div>
                         <div className="muted" style={{ fontSize: 12 }}>
                           {c.msgCount} msg • {fmtDateBR(c.last_created_at)}
                         </div>
@@ -613,12 +512,7 @@ export default function DashboardPage() {
               )}
 
               {hasMore ? (
-                <button
-                  className="btn"
-                  onClick={() => loadHistory({ reset: false })}
-                  disabled={loadingRows}
-                  style={{ marginTop: 6 }}
-                >
+                <button className="btn" onClick={() => loadHistory({ reset: false })} disabled={loadingRows} style={{ marginTop: 6 }}>
                   {loadingRows ? "Carregando…" : "Carregar mais"}
                 </button>
               ) : (
@@ -631,22 +525,13 @@ export default function DashboardPage() {
         </section>
 
         {/* THREAD */}
-        <section
-          className="card"
-          style={{
-            padding: 12,
-            height: "calc(100vh - 260px)",
-            minHeight: 520,
-            overflow: "hidden",
-            display: showThread ? "block" : undefined,
-          }}
-        >
+        <section className="card dashPanel">
           {!selectedSession ? (
             <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
               <div style={{ textAlign: "center", maxWidth: 420 }}>
-                <div style={{ fontWeight: 950, fontSize: 16 }}>Selecione uma conversa</div>
+                <div style={{ fontWeight: 900, fontSize: 16 }}>Selecione uma conversa</div>
                 <p className="muted" style={{ marginTop: 8, lineHeight: 1.5 }}>
-                  Escolha uma conversa para ver o histórico e continuar no Assistente.
+                  Escolha uma conversa ao lado para ver o histórico e continuar no Assistente.
                 </p>
                 <a className="btn btnPrimary" href="/assistente">
                   Abrir Assistente
@@ -658,41 +543,24 @@ export default function DashboardPage() {
               {/* header */}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 950 }}>Histórico</div>
+                  <div style={{ fontWeight: 900 }}>Histórico</div>
                   <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
                     Tema: <b style={{ color: "var(--text)" }}>{TOPIC_LABEL[selectedTopic] || "Geral"}</b>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    className="btn"
-                    onClick={() => setMobileView("list")}
-                    style={{ display: "none" }}
-                    id="btnBackMobile"
-                  >
-                    ← Voltar
-                  </button>
-
-                  <a className="btn btnPrimary" href={continueLink(selectedSession, selectedTopic)}>
+                  <a className="btn" href={continueLink(selectedSession, selectedTopic)}>
                     Continuar no Assistente
                   </a>
-
                   <button className="btn" onClick={() => deleteConversation(selectedSession)}>
                     🗑️ Excluir
                   </button>
                 </div>
               </div>
 
-              {/* body */}
-              <div
-                className="chatWrap"
-                style={{
-                  height: "100%",
-                  maxHeight: "unset",
-                  background: "rgba(0,0,0,0.18)",
-                }}
-              >
+              {/* ✅ THREAD com scroll interno (não vaza) */}
+              <div className="dashThread">
                 {loadingThread ? (
                   <div className="muted" style={{ padding: 8 }}>
                     Carregando conversa…
@@ -708,8 +576,6 @@ export default function DashboardPage() {
                     {m.content}
                   </div>
                 ))}
-
-                <div ref={endThreadRef} />
               </div>
 
               {/* footer */}
@@ -721,27 +587,6 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
-
-      {/* ===== Mobile behavior ===== */}
-      <style jsx>{`
-        @media (max-width: 980px) {
-          .dashGrid {
-            grid-template-columns: minmax(0, 1fr) !important;
-          }
-          section[style*="height: calc(100vh - 260px)"] {
-            height: auto !important;
-            min-height: 0 !important;
-          }
-          #btnBackMobile {
-            display: inline-flex !important;
-          }
-        }
-        @media (max-width: 520px) {
-          h1 {
-            font-size: 28px !important;
-          }
-        }
-      `}</style>
     </main>
   );
 }
