@@ -1,5 +1,4 @@
 :root {
-  /* core */
   --text: #e5e7eb;
   --muted: rgba(229, 231, 235, 0.65);
   --border: rgba(255, 255, 255, 0.10);
@@ -10,14 +9,12 @@
   --card: rgba(255, 255, 255, 0.05);
   --card2: rgba(255, 255, 255, 0.07);
 
-  /* ChatGPT-ish accent */
   --primary: #10a37f;
   --primary2: #0b8a6b;
   --ring: rgba(16, 163, 127, 0.28);
 
   --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
 
-  /* inputs/buttons */
   --radius-sm: 14px;
   --radius-md: 18px;
 
@@ -27,7 +24,6 @@
   --btnBg: rgba(255, 255, 255, 0.06);
   --btnBgHover: rgba(255, 255, 255, 0.10);
 
-  /* safe area */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -50,14 +46,12 @@ a:hover { text-decoration: none; }
 
 hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
-/* layout base */
 .container {
   max-width: 980px;
   margin: 0 auto;
   padding: 16px;
 }
 
-/* cards */
 .card {
   border: 1px solid var(--border);
   background: var(--card);
@@ -66,7 +60,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   box-shadow: var(--shadow);
 }
 
-/* muted */
 .muted { color: var(--muted); }
 
 /* buttons */
@@ -83,7 +76,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-
 .btn:hover {
   background: var(--btnBgHover);
   border-color: rgba(255, 255, 255, 0.20);
@@ -112,87 +104,21 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .input::placeholder,
 .textarea::placeholder { color: rgba(229,231,235,0.55); }
-
 .input:focus,
 .textarea:focus {
   border-color: rgba(16,163,127,0.45);
   box-shadow: 0 0 0 4px var(--ring);
 }
 
-/* ===== Dashboard grid (evita "tela ao lado") ===== */
-.dashGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-.dashGrid > * { min-width: 0; }
-@media (min-width: 960px){
-  .dashGrid { grid-template-columns: 360px minmax(0, 1fr); }
-}
-
-/* ===== White card correction (quando usar background branco inline) ===== */
-.card[style*="background: white"],
-.card[style*="background:white"],
-.card[style*="background: #fff"],
-.card[style*="background:#fff"],
-.card[style*="background: rgb(255, 255, 255)"],
-.card[style*="background:rgb(255, 255, 255)"] {
-  color: #0f172a !important;
-}
-.card[style*="background: white"] .muted,
-.card[style*="background:white"] .muted,
-.card[style*="background: #fff"] .muted,
-.card[style*="background:#fff"] .muted,
-.card[style*="background: rgb(255, 255, 255)"] .muted,
-.card[style*="background:rgb(255, 255, 255)"] .muted {
-  color: #334155 !important;
-}
-.card[style*="background: white"] a,
-.card[style*="background:white"] a,
-.card[style*="background: #fff"] a,
-.card[style*="background:#fff"] a,
-.card[style*="background: rgb(255, 255, 255)"] a,
-.card[style*="background:rgb(255, 255, 255)"] a,
-.card[style*="background: white"] h1,
-.card[style*="background:white"] h1,
-.card[style*="background: #fff"] h1,
-.card[style*="background:#fff"] h1,
-.card[style*="background: rgb(255, 255, 255)"] h1,
-.card[style*="background:rgb(255, 255, 255)"] h1,
-.card[style*="background: white"] h2,
-.card[style*="background:white"] h2,
-.card[style*="background: #fff"] h2,
-.card[style*="background:#fff"] h2,
-.card[style*="background: rgb(255, 255, 255)"] h2,
-.card[style*="background:rgb(255, 255, 255)"] h2,
-.card[style*="background: white"] p,
-.card[style*="background:white"] p,
-.card[style*="background: #fff"] p,
-.card[style*="background:#fff"] p,
-.card[style*="background: rgb(255, 255, 255)"] p,
-.card[style*="background:rgb(255, 255, 255)"] p,
-.card[style*="background: white"] span,
-.card[style*="background:white"] span,
-.card[style*="background: #fff"] span,
-.card[style*="background:#fff"] span,
-.card[style*="background: rgb(255, 255, 255)"] span,
-.card[style*="background:rgb(255, 255, 255)"] span {
-  color: #0f172a !important;
-}
-
 /* =========================================================
-   CHATGPT-LIKE CHAT UI (usa classes do ChatBox)
+   CHATGPT-LIKE CHAT UI (ChatBox)
    ========================================================= */
-
-/* um “shell” com aparência ChatGPT dark */
 .chatShell {
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.04);
   border-radius: 18px;
   overflow: hidden;
 }
-
-/* header do chat */
 .chatHeaderRow {
   display: flex;
   align-items: center;
@@ -202,29 +128,18 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   border-bottom: 1px solid rgba(255,255,255,0.08);
   background: rgba(0,0,0,0.18);
 }
+.chatTitle { font-weight: 900; font-size: 16px; }
+.chatMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-.chatTitle {
-  font-weight: 900;
-  font-size: 16px;
-}
-
-.chatMeta {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-/* área das mensagens com scroll próprio */
 .chatMessages {
   display: grid;
   gap: 10px;
   padding: 14px;
-  max-height: 62vh;           /* “tela cheia” sem quebrar layout */
+  max-height: 62vh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-/* bolhas */
 .chatBubble {
   padding: 10px 12px;
   border-radius: 14px;
@@ -235,29 +150,19 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   font-size: 14px;
   border: 1px solid rgba(255,255,255,0.10);
 }
-
 .chatUser {
   justify-self: end;
   background: rgba(16,163,127,0.18);
   border-color: rgba(16,163,127,0.25);
 }
-
 .chatAssistant {
   justify-self: start;
   background: rgba(255,255,255,0.05);
 }
 
-/* typing dots */
-.chatTyping {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-}
-
+.chatTyping { display: inline-flex; gap: 6px; align-items: center; }
 .typingDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
+  width: 6px; height: 6px; border-radius: 999px;
   background: rgba(229,231,235,0.8);
   opacity: 0.3;
   animation: typing 1.2s infinite ease-in-out;
@@ -270,7 +175,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   40% { transform: translateY(-3px); opacity: 0.85; }
 }
 
-/* composer FIXO no rodapé do chat (igual ChatGPT) */
 .composer {
   position: sticky;
   bottom: 0;
@@ -295,11 +199,8 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   border-radius: 16px;
   padding: 10px 10px;
 }
-
-/* botão ícone (anexo) */
 .iconBtn {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(0,0,0,0.20);
@@ -311,7 +212,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .iconBtn:hover { background: rgba(255,255,255,0.06); }
 .iconBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* input do composer (textarea) */
 .composerInput {
   flex: 1;
   min-height: 40px;
@@ -327,7 +227,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .composerInput::placeholder { color: rgba(229,231,235,0.55); }
 
-/* chips do arquivo anexado */
 .fileChipRow {
   display: flex;
   gap: 10px;
@@ -335,7 +234,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
-
 .fileChip {
   display: inline-flex;
   gap: 8px;
@@ -347,7 +245,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   color: var(--text);
   font-size: 12px;
 }
-
 .fileChip button {
   border: 0;
   background: transparent;
@@ -356,48 +253,162 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .fileChip button:hover { color: var(--text); }
 
+/* =========================================================
+   DASHBOARD (NOVO, LIMPO, APP-LIKE)
+   ========================================================= */
+.dashTop { padding: 14px; }
+.dashTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dashTitle {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 950;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+}
+.dashActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashCard { padding: 14px; }
+.dashHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.dashSectionTitle { font-weight: 950; font-size: 18px; }
+
+.dashFilters {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  grid-template-columns: 1fr 1fr auto;
+}
+@media (max-width: 860px) {
+  .dashFilters { grid-template-columns: 1fr; }
+}
+
+.dashList {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.convoItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  padding: 10px;
+}
+.convoMain {
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.convoTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.convoTag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.16);
+  width: fit-content;
+}
+.convoTitle {
+  font-weight: 950;
+  font-size: 15px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.convoMeta {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.convoActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.iconSquare {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.iconSquare:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.18);
+}
+.iconSquare:active { transform: scale(0.98); }
+.iconSquare:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* Mobile */
 @media (max-width: 520px) {
   .container { padding: 12px; }
   .card { padding: 14px; }
   .chatMessages { max-height: 58vh; }
   .chatBubble { max-width: 96%; }
+  .dashTitle { font-size: 36px; }
+  .iconSquare { width: 42px; height: 42px; }
 }
 
 /* =========================
    Pricing / Planos (AI look)
 ========================= */
-
 .pricingWrap{
   max-width: 980px;
   margin: 0 auto;
   padding: 16px;
 }
-
 .pricingHeader{
   margin-top: 6px;
   margin-bottom: 14px;
   display: grid;
   gap: 10px;
 }
-
 .pricingTitle{
   font-size: 42px;
   font-weight: 950;
   letter-spacing: -0.6px;
   line-height: 1.05;
 }
-
 @media (max-width: 520px){
   .pricingTitle{ font-size: 34px; }
 }
-
 .pricingSub{
   font-size: 15px;
   color: rgba(229,231,235,0.72);
   max-width: 62ch;
 }
-
 .planStatusPill{
   display:inline-flex;
   align-items:center;
@@ -408,21 +419,16 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   background: rgba(0,0,0,0.18);
   width: fit-content;
 }
-
-.planStatusPill b{
-  color: var(--text);
-}
+.planStatusPill b{ color: var(--text); }
 
 .pricingGrid{
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-
 @media (max-width: 900px){
   .pricingGrid{ grid-template-columns: 1fr; }
 }
-
 .planCard{
   position: relative;
   border-radius: 22px;
@@ -431,7 +437,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   box-shadow: 0 18px 60px rgba(0,0,0,0.35);
   overflow: hidden;
 }
-
 .planCard::before{
   content:"";
   position:absolute;
@@ -443,14 +448,12 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   opacity: 0.95;
   pointer-events:none;
 }
-
 .planCardInner{
   position: relative;
   padding: 18px;
   display: grid;
   gap: 14px;
 }
-
 .planTopRow{
   display:flex;
   justify-content: space-between;
@@ -458,27 +461,14 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   flex-wrap: wrap;
   align-items:flex-start;
 }
-
 .planName{
   font-size: 22px;
   font-weight: 950;
   letter-spacing: -0.2px;
 }
-
-.planPrice{
-  display: grid;
-  gap: 4px;
-}
-
-.planPriceMain{
-  font-size: 22px;
-  font-weight: 950;
-}
-
-.planPriceSub{
-  font-size: 12px;
-  color: rgba(229,231,235,0.7);
-}
+.planPrice{ display: grid; gap: 4px; }
+.planPriceMain{ font-size: 22px; font-weight: 950; }
+.planPriceSub{ font-size: 12px; color: rgba(229,231,235,0.7); }
 
 .planBadge{
   position:absolute;
@@ -500,7 +490,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   padding: 0;
   list-style: none;
 }
-
 .planItem{
   display:flex;
   gap: 10px;
@@ -508,7 +497,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   color: rgba(229,231,235,0.86);
   line-height: 1.35;
 }
-
 .planIcon{
   width: 22px;
   height: 22px;
@@ -528,7 +516,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   align-items:center;
   justify-content: space-between;
 }
-
 .planBtn{
   border: 0;
   cursor: pointer;
@@ -541,7 +528,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   min-width: 140px;
   text-align:center;
 }
-
 .planBtn:hover{ filter: brightness(1.05); }
 .planBtn:disabled{ opacity: 0.6; cursor: not-allowed; }
 
@@ -554,204 +540,16 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   cursor: pointer;
   font-weight: 900;
 }
-
 .planGhostBtn:hover{ background: rgba(255,255,255,0.10); }
 
 .planHint{
   font-size: 12px;
   color: rgba(229,231,235,0.68);
 }
-
 .planFooterNote{
   margin-top: 14px;
   font-size: 12px;
   color: rgba(229,231,235,0.62);
   border-top: 1px solid rgba(255,255,255,0.08);
   padding-top: 12px;
-}
-
-/* =========================================================
-   DASHBOARD V2 (mais limpo / app-like)
-   ========================================================= */
-
-.dashTop{
-  padding: 14px !important;
-  margin-bottom: 12px;
-}
-.dashTopRow{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.dashTopActions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-.dashGridV2{
-  margin-top: 14px;
-}
-
-.dashPanelV2{
-  padding: 12px !important;
-  height: calc(100vh - 220px);
-  min-height: 520px;
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 10px;
-}
-
-.dashPanelHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-
-.dashFilters{
-  display:grid;
-  gap:8px;
-}
-
-.dashFilterRow{
-  display:flex;
-  gap:10px;
-}
-
-.dashBtnTiny{
-  padding: 10px 12px !important;
-  min-width: 44px;
-  display:grid;
-  place-items:center;
-}
-
-.dashListV2{
-  overflow:auto;
-  padding-right: 4px;
-  display:grid;
-  gap:10px;
-}
-
-/* item de conversa (compacto) */
-.convItem{
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04);
-  display:grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  padding: 10px;
-}
-.convItem.isActive{
-  border-color: rgba(16,163,127,0.35);
-  background: rgba(16,163,127,0.06);
-}
-
-.convMain{
-  all: unset;
-  cursor: pointer;
-  display:grid;
-  gap:6px;
-  min-width:0;
-}
-.convTop{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-.convTag{
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.18);
-}
-.convAgo{
-  font-size: 12px;
-  color: rgba(229,231,235,0.65);
-}
-.convTitle{
-  font-weight: 900;
-  line-height: 1.15;
-  font-size: 15px;
-}
-.convMeta{
-  font-size: 12px;
-  color: rgba(229,231,235,0.65);
-}
-
-.convActions{
-  display:flex;
-  flex-direction:column;
-  gap: 8px;
-  justify-content:space-between;
-}
-
-/* thread */
-.dashEmpty{
-  height:100%;
-  display:grid;
-  place-items:center;
-}
-
-.dashThreadShell{
-  height:100%;
-  display:grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 10px;
-}
-
-.dashThreadHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap: 10px;
-  flex-wrap:wrap;
-}
-.dashThreadHeaderActions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-.dashThreadV2{
-  height:100%;
-  overflow:auto;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(0,0,0,0.16);
-  overscroll-behavior: contain;
-  display:grid;
-  gap:10px;
-}
-
-.dashThreadFooter{
-  font-size: 12px;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-/* Mobile adjustments */
-@media (max-width: 880px){
-  .dashPanelV2{
-    height:auto;
-    min-height: 0;
-  }
-  .dashThreadV2{
-    max-height: 58vh;
-  }
-  .convActions{
-    flex-direction:row;
-    align-items:center;
-  }
 }
