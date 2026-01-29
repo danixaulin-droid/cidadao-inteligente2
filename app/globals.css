@@ -219,7 +219,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   display: grid;
   gap: 10px;
   padding: 14px;
-  max-height: 62vh;
+  max-height: 62vh;           /* “tela cheia” sem quebrar layout */
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -243,7 +243,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 
 .chatAssistant {
-  demonstrate: none;
   justify-self: start;
   background: rgba(255,255,255,0.05);
 }
@@ -572,45 +571,187 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 
 /* =========================================================
-   ✅ DASHBOARD FIX: evita “conversa vazando”
+   DASHBOARD V2 (mais limpo / app-like)
    ========================================================= */
 
-/* painéis do dashboard (altura consistente) */
-.dashPanel{
-  padding: 12px;
+.dashTop{
+  padding: 14px !important;
+  margin-bottom: 12px;
+}
+.dashTopRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.dashTopActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.dashGridV2{
+  margin-top: 14px;
+}
+
+.dashPanelV2{
+  padding: 12px !important;
   height: calc(100vh - 220px);
   min-height: 520px;
   overflow: hidden;
   display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 10px;
 }
 
-/* lista interna do sidebar rola por dentro */
-.dashList{
-  margin-top: 4px;
-  overflow: auto;
+.dashPanelHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.dashFilters{
+  display:grid;
+  gap:8px;
+}
+
+.dashFilterRow{
+  display:flex;
+  gap:10px;
+}
+
+.dashBtnTiny{
+  padding: 10px 12px !important;
+  min-width: 44px;
+  display:grid;
+  place-items:center;
+}
+
+.dashListV2{
+  overflow:auto;
   padding-right: 4px;
-  display: grid;
-  gap: 8px;
+  display:grid;
+  gap:10px;
 }
 
-/* thread rola por dentro (NÃO cresce infinito) */
-.dashThread{
-  height: 100%;
-  overflow-y: auto;
+/* item de conversa (compacto) */
+.convItem{
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px;
+}
+.convItem.isActive{
+  border-color: rgba(16,163,127,0.35);
+  background: rgba(16,163,127,0.06);
+}
+
+.convMain{
+  all: unset;
+  cursor: pointer;
+  display:grid;
+  gap:6px;
+  min-width:0;
+}
+.convTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.convTag{
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+}
+.convAgo{
+  font-size: 12px;
+  color: rgba(229,231,235,0.65);
+}
+.convTitle{
+  font-weight: 900;
+  line-height: 1.15;
+  font-size: 15px;
+}
+.convMeta{
+  font-size: 12px;
+  color: rgba(229,231,235,0.65);
+}
+
+.convActions{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+  justify-content:space-between;
+}
+
+/* thread */
+.dashEmpty{
+  height:100%;
+  display:grid;
+  place-items:center;
+}
+
+.dashThreadShell{
+  height:100%;
+  display:grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+}
+
+.dashThreadHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap: 10px;
+  flex-wrap:wrap;
+}
+.dashThreadHeaderActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.dashThreadV2{
+  height:100%;
+  overflow:auto;
   padding: 10px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.16);
   overscroll-behavior: contain;
+  display:grid;
+  gap:10px;
 }
 
-/* Mobile: painel vira “auto”, mas a thread tem limite e scroll interno */
+.dashThreadFooter{
+  font-size: 12px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* Mobile adjustments */
 @media (max-width: 880px){
-  .dashPanel{
-    height: auto;
+  .dashPanelV2{
+    height:auto;
     min-height: 0;
   }
-  .dashThread{
+  .dashThreadV2{
     max-height: 58vh;
+  }
+  .convActions{
+    flex-direction:row;
+    align-items:center;
   }
 }
