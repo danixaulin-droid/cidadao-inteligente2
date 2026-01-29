@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 const ADMIN_EMAIL = "vandilmar19@gmail.com";
-const PAGE_SIZE = 160;
+const PAGE_SIZE = 120;
 
 const TOPIC_LABEL = {
   geral: "Geral",
@@ -16,7 +16,7 @@ const TOPIC_LABEL = {
   outros: "Outros",
 };
 
-function shortText(s = "", max = 72) {
+function shortText(s = "", max = 64) {
   const t = (s || "").trim().replace(/\s+/g, " ");
   if (!t) return "";
   if (t.length <= max) return t;
@@ -31,7 +31,7 @@ function timeAgoBR(iso) {
 
     const min = Math.floor(diff / 60000);
     if (min < 1) return "agora";
-    if (min < 60) return `${min}min`;
+    if (min < 60) return `${min}m`;
 
     const h = Math.floor(min / 60);
     if (h < 24) return `${h}h`;
@@ -69,35 +69,13 @@ export default function DashboardPage() {
   const [topic, setTopic] = useState("all");
   const [query, setQuery] = useState("");
 
+  // rows = mensagens (chat_history)
   const [rows, setRows] = useState([]);
   const [loadingRows, setLoadingRows] = useState(false);
   const [msg, setMsg] = useState("");
 
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-
-  const [selectedSession, setSelectedSession] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("geral");
-
-  const [thread, setThread] = useState([]);
-  const [loadingThread, setLoadingThread] = useState(false);
-
-  // ✅ mobile-friendly: histórico colapsado por padrão no celular
-  const [isMobile, setIsMobile] = useState(false);
-  const [showHistory, setShowHistory] = useState(true);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const m = window.matchMedia("(max-width: 880px)");
-    const apply = () => {
-      const mobile = !!m.matches;
-      setIsMobile(mobile);
-      setShowHistory(!mobile); // desktop: aberto / mobile: fechado
-    };
-    apply();
-    m.addEventListener?.("change", apply);
-    return () => m.removeEventListener?.("change", apply);
-  }, []);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -112,10 +90,14 @@ export default function DashboardPage() {
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
 
-    if (selectedTopic && selectedTopic !== "all") q = q.eq("topic", selectedTopic);
+    if (selectedTopic && selectedTopic !== "all") {
+      q = q.eq("topic", selectedTopic);
+    }
 
     const s = (search || "").trim();
-    if (s) q = q.or(`user_message.ilike.%${s}%,assistant_message.ilike.%${s}%`);
+    if (s) {
+      q = q.or(`user_message.ilike.%${s}%,assistant_message.ilike.%${s}%`);
+    }
 
     return q;
   }
@@ -155,6 +137,7 @@ export default function DashboardPage() {
     }
   }
 
+  // ✅ Agrupa conversas por session_id (lista de conversas)
   const conversations = useMemo(() => {
     const map = new Map();
 
@@ -169,6 +152,7 @@ export default function DashboardPage() {
           msgCount: 0,
         });
       }
+
       const c = map.get(sid);
       c.msgCount += 1;
 
@@ -187,6 +171,7 @@ export default function DashboardPage() {
   }, [rows]);
 
   const lastConv = useMemo(() => (conversations.length ? conversations[0] : null), [conversations]);
+
   const lastTopicLabel = useMemo(() => {
     const t = (lastConv?.topic || "geral").toLowerCase();
     return TOPIC_LABEL[t] || "Geral";
@@ -198,46 +183,8 @@ export default function DashboardPage() {
     return `/assistente/chat?topic=${encodeURIComponent(t)}&session=${encodeURIComponent(sessionId)}`;
   }
 
-  async function loadThread(sessionId) {
-    if (!userId || !sessionId) return;
-
-    setLoadingThread(true);
-    setMsg("");
-    try {
-      const { data, error } = await supabase
-        .from("chat_history")
-        .select("user_message,assistant_message,created_at,topic,session_id")
-        .eq("user_id", userId)
-        .eq("session_id", sessionId)
-        .order("created_at", { ascending: true })
-        .limit(220);
-
-      if (error) throw error;
-
-      const t = [];
-      for (const row of data || []) {
-        if (row.user_message) t.push({ role: "user", content: row.user_message, created_at: row.created_at });
-        if (row.assistant_message) t.push({ role: "assistant", content: row.assistant_message, created_at: row.created_at });
-      }
-      setThread(t);
-    } catch (e) {
-      setMsg(e?.message || "Falha ao abrir conversa.");
-      setThread([]);
-    } finally {
-      setLoadingThread(false);
-    }
-  }
-
-  function selectConversation(c) {
-    const sid = c.session_id;
-    if (!sid || sid === "sem-session") return;
-
-    setSelectedSession(sid);
-    setSelectedTopic((c.topic || "geral").toLowerCase());
-    loadThread(sid);
-
-    // no mobile, não “empurra” tudo: apenas habilita o botão “Ver histórico”
-    if (isMobile) setShowHistory(false);
+  function openConversation(c) {
+    router.push(continueLink(c.session_id, c.topic));
   }
 
   async function deleteConversation(sessionId) {
@@ -250,15 +197,15 @@ export default function DashboardPage() {
     if (!ok) return;
 
     try {
-      const { error } = await supabase.from("chat_history").delete().eq("user_id", userId).eq("session_id", sessionId);
+      const { error } = await supabase
+        .from("chat_history")
+        .delete()
+        .eq("user_id", userId)
+        .eq("session_id", sessionId);
+
       if (error) throw error;
 
       setRows((prev) => prev.filter((r) => r.session_id !== sessionId));
-      if (selectedSession === sessionId) {
-        setSelectedSession("");
-        setThread([]);
-        setShowHistory(!isMobile);
-      }
     } catch (e) {
       alert(e?.message || "Falha ao excluir conversa.");
     }
@@ -275,11 +222,8 @@ export default function DashboardPage() {
       if (error) throw error;
 
       setRows([]);
-      setSelectedSession("");
-      setThread([]);
       setHasMore(false);
       setPage(0);
-      setShowHistory(!isMobile);
     } catch (e) {
       alert(e?.message || "Falha ao limpar tudo.");
     }
@@ -305,8 +249,6 @@ export default function DashboardPage() {
 
       setPage(0);
       setHasMore(true);
-      setSelectedSession("");
-      setThread([]);
     }
 
     boot();
@@ -319,44 +261,28 @@ export default function DashboardPage() {
     if (!userId) return;
     setPage(0);
     setHasMore(true);
-    setSelectedSession("");
-    setThread([]);
-    setShowHistory(!isMobile);
     loadHistory({ reset: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, topic, query]);
 
-  // auto-seleciona a conversa mais recente (somente desktop)
-  useEffect(() => {
-    if (!conversations.length) return;
-    if (selectedSession) return;
-    if (isMobile) return;
-    const first = conversations[0];
-    if (!first?.session_id || first.session_id === "sem-session") return;
-    setSelectedSession(first.session_id);
-    setSelectedTopic((first.topic || "geral").toLowerCase());
-    loadThread(first.session_id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations, isMobile]);
-
   if (loadingUser) {
     return (
       <main className="container">
-        <div className="card" style={{ maxWidth: 980, margin: "0 auto" }}>
-          <h1 style={{ marginTop: 0 }}>Dashboard</h1>
-          <p className="muted">Carregando…</p>
+        <div className="card dashTop">
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <p className="muted" style={{ marginTop: 8 }}>Carregando…</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="container" style={{ maxWidth: 1120 }}>
-      {/* Top bar (limpo) */}
+    <main className="container" style={{ maxWidth: 980 }}>
+      {/* Top */}
       <div className="card dashTop">
         <div className="dashTopRow">
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ margin: 0 }}>Dashboard</h1>
+            <h1 className="dashTitle">Dashboard</h1>
             <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
               Logado como: <b style={{ color: "var(--text)" }}>{email}</b>
             </div>
@@ -371,205 +297,120 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="dashTopActions">
-            <a className="btn" href="/assistente">
-              + Nova conversa
-            </a>
-            {isAdmin && (
-              <a className="btn" href="/admin">
-                Admin
-              </a>
-            )}
-            <button className="btn" onClick={logout}>
-              Sair
-            </button>
+          <div className="dashActions">
+            <a className="btn" href="/assistente">+ Nova conversa</a>
+            {isAdmin && <a className="btn" href="/admin">Admin</a>}
+            <button className="btn" onClick={logout}>Sair</button>
           </div>
         </div>
 
-        {msg ? (
-          <div className="statusChip err" style={{ marginTop: 10 }}>
-            {msg}
-          </div>
-        ) : null}
+        {msg ? <div className="statusChip err" style={{ marginTop: 10 }}>{msg}</div> : null}
       </div>
 
-      {/* Grid */}
-      <div className="dashGrid dashGridV2">
-        {/* SIDEBAR */}
-        <section className="card dashPanelV2">
-          <div className="dashPanelHeader">
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 900 }}>Conversas</div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
-                {conversations.length} no filtro
-              </div>
-            </div>
-
-            <button className="btn dashBtnTiny" onClick={clearAllConversations} title="Limpar todas as conversas">
-              🧹
-            </button>
-          </div>
-
-          {/* filtros compactos */}
-          <div className="dashFilters">
-            <select className="input" value={topic} onChange={(e) => setTopic(e.target.value)}>
-              <option value="all">Todos os temas</option>
-              <option value="rg">RG</option>
-              <option value="cpf">CPF</option>
-              <option value="cnh">CNH</option>
-              <option value="beneficios">Benefícios</option>
-              <option value="outros">Outros</option>
-              <option value="geral">Geral</option>
-            </select>
-
-            <input className="input" placeholder="Buscar conversas…" value={query} onChange={(e) => setQuery(e.target.value)} />
-
-            <div className="dashFilterRow">
-              <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={loadingRows} style={{ flex: 1 }}>
-                {loadingRows ? "Buscando…" : "Buscar"}
-              </button>
-              {hasMore ? (
-                <button className="btn dashBtnTiny" onClick={() => loadHistory({ reset: false })} disabled={loadingRows} title="Carregar mais">
-                  +
-                </button>
-              ) : null}
+      {/* Filtros + Lista */}
+      <div className="card dashCard" style={{ marginTop: 12 }}>
+        <div className="dashHeaderRow">
+          <div style={{ minWidth: 0 }}>
+            <div className="dashSectionTitle">Conversas</div>
+            <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+              {conversations.length} no filtro
             </div>
           </div>
 
-          {/* lista compacta */}
-          <div className="dashListV2">
-            {conversations.length === 0 ? (
-              <div className="muted" style={{ padding: 10 }}>
-                Nenhuma conversa encontrada.
-              </div>
-            ) : (
-              conversations.map((c) => {
-                const sid = c.session_id;
-                const label = TOPIC_LABEL[(c.topic || "geral").toLowerCase()] || "Geral";
-                const ago = timeAgoBR(c.last_created_at);
-                const title = shortText(c.last_question || "", 54) || "Conversa";
-                const active = sid === selectedSession;
-                const deletable = sid && sid !== "sem-session";
+          <button className="btn" onClick={clearAllConversations} title="Limpar todas">
+            🧹 Limpar
+          </button>
+        </div>
 
-                return (
-                  <div key={sid} className={"convItem " + (active ? "isActive" : "")}>
-                    <button
-                      className="convMain"
-                      onClick={() => selectConversation(c)}
-                      title="Abrir preview do histórico"
-                    >
-                      <div className="convTop">
-                        <span className="convTag">{label}</span>
-                        <span className="convAgo">{ago}</span>
-                      </div>
+        <div className="dashFilters">
+          <select className="input" value={topic} onChange={(e) => setTopic(e.target.value)}>
+            <option value="all">Todos os temas</option>
+            <option value="rg">RG</option>
+            <option value="cpf">CPF</option>
+            <option value="cnh">CNH</option>
+            <option value="beneficios">Benefícios</option>
+            <option value="outros">Outros</option>
+            <option value="geral">Geral</option>
+          </select>
 
-                      <div className="convTitle">{title}</div>
-                      <div className="convMeta">
-                        {c.msgCount} msg • {fmtDateBR(c.last_created_at)}
-                      </div>
-                    </button>
+          <input
+            className="input"
+            placeholder="Buscar… (ex: RG, CNH, boleto)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
 
-                    <div className="convActions">
-                      <a className="btn dashBtnTiny" href={continueLink(sid, c.topic)} title="Continuar no Assistente">
-                        ↗
-                      </a>
+          <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={loadingRows}>
+            {loadingRows ? "Buscando…" : "Buscar"}
+          </button>
+        </div>
 
-                      <button
-                        className="btn dashBtnTiny"
-                        title="Excluir"
-                        onClick={() => deletable && deleteConversation(sid)}
-                        disabled={!deletable}
-                        style={{ opacity: deletable ? 1 : 0.45 }}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-
-            {hasMore ? (
-              <button className="btn" onClick={() => loadHistory({ reset: false })} disabled={loadingRows} style={{ marginTop: 8 }}>
-                {loadingRows ? "Carregando…" : "Carregar mais"}
-              </button>
-            ) : (
-              <div className="muted" style={{ fontSize: 12, padding: "8px 10px" }}>
-                Fim da lista.
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* THREAD (limpo e menos chamativo) */}
-        <section className="card dashPanelV2">
-          {!selectedSession ? (
-            <div className="dashEmpty">
-              <div style={{ textAlign: "center", maxWidth: 420 }}>
-                <div style={{ fontWeight: 900, fontSize: 16 }}>Selecione uma conversa</div>
-                <p className="muted" style={{ marginTop: 8, lineHeight: 1.5 }}>
-                  Toque em uma conversa à esquerda para ver um preview do histórico, ou clique no ícone ↗ para continuar no Assistente.
-                </p>
-                <a className="btn btnPrimary" href="/assistente">
-                  Abrir Assistente
-                </a>
-              </div>
+        <div className="dashList">
+          {conversations.length === 0 ? (
+            <div className="muted" style={{ padding: 10 }}>
+              Nenhuma conversa encontrada.
             </div>
           ) : (
-            <div className="dashThreadShell">
-              <div className="dashThreadHeader">
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900 }}>Histórico</div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
-                    Tema: <b style={{ color: "var(--text)" }}>{TOPIC_LABEL[selectedTopic] || "Geral"}</b>
+            conversations.map((c) => {
+              const sid = c.session_id;
+              const label = TOPIC_LABEL[(c.topic || "geral").toLowerCase()] || "Geral";
+              const ago = timeAgoBR(c.last_created_at);
+              const title = shortText(c.last_question || "", 58) || "Conversa";
+              const deletable = sid && sid !== "sem-session";
+
+              return (
+                <div className="convoItem" key={sid}>
+                  <div className="convoMain" onClick={() => openConversation(c)} role="button" tabIndex={0}>
+                    <div className="convoTop">
+                      <span className="convoTag">{label}</span>
+                      <span className="muted" style={{ fontSize: 12 }}>{ago}</span>
+                    </div>
+
+                    <div className="convoTitle">{title}</div>
+
+                    <div className="convoMeta muted">
+                      {c.msgCount} msg • {fmtDateBR(c.last_created_at)}
+                    </div>
+                  </div>
+
+                  <div className="convoActions">
+                    <button
+                      className="iconSquare"
+                      title="Abrir"
+                      onClick={() => openConversation(c)}
+                      aria-label="Abrir"
+                    >
+                      ↗
+                    </button>
+
+                    <button
+                      className="iconSquare"
+                      title="Excluir"
+                      onClick={() => deletable && deleteConversation(sid)}
+                      disabled={!deletable}
+                      aria-label="Excluir"
+                      style={{ opacity: deletable ? 1 : 0.55 }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
-
-                <div className="dashThreadHeaderActions">
-                  {isMobile ? (
-                    <button className="btn" onClick={() => setShowHistory((v) => !v)}>
-                      {showHistory ? "Ocultar histórico" : "Ver histórico"}
-                    </button>
-                  ) : null}
-
-                  <a className="btn" href={continueLink(selectedSession, selectedTopic)} title="Abrir essa sessão no Assistente">
-                    Continuar
-                  </a>
-
-                  <button className="btn" onClick={() => deleteConversation(selectedSession)} title="Excluir sessão">
-                    🗑️
-                  </button>
-                </div>
-              </div>
-
-              {/* ✅ no mobile: histórico só aparece quando "Ver histórico" */}
-              {(!isMobile || showHistory) && (
-                <div className="dashThreadV2">
-                  {loadingThread ? (
-                    <div className="muted" style={{ padding: 10 }}>
-                      Carregando conversa…
-                    </div>
-                  ) : thread.length === 0 ? (
-                    <div className="muted" style={{ padding: 10 }}>
-                      Nenhuma mensagem nesta conversa.
-                    </div>
-                  ) : null}
-
-                  {thread.map((m, i) => (
-                    <div key={i} className={"chatBubble " + (m.role === "user" ? "chatUser" : "chatAssistant")}>
-                      {m.content}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="dashThreadFooter">
-                <span>Conversa: {String(selectedSession).slice(0, 8)}…</span>
-                <span className="muted">Dica: ↗ abre a conversa no Assistente.</span>
-              </div>
-            </div>
+              );
+            })
           )}
-        </section>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 10 }}>
+            <div className="muted" style={{ fontSize: 12 }}>
+              {hasMore ? "Carregue mais para ver conversas antigas." : "Fim da lista."}
+            </div>
+
+            {hasMore ? (
+              <button className="btn" onClick={() => loadHistory({ reset: false })} disabled={loadingRows}>
+                {loadingRows ? "Carregando…" : "Carregar mais"}
+              </button>
+            ) : null}
+          </div>
+        </div>
       </div>
     </main>
   );
