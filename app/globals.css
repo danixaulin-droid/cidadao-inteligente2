@@ -1,0 +1,365 @@
+:root {
+  /* core */
+  --text: #e5e7eb;
+  --muted: rgba(229, 231, 235, 0.65);
+  --border: rgba(255, 255, 255, 0.10);
+
+  --bg0: #0b0f14;
+  --bg1: #070a0f;
+
+  --card: rgba(255, 255, 255, 0.05);
+  --card2: rgba(255, 255, 255, 0.07);
+
+  /* ChatGPT-ish accent */
+  --primary: #10a37f;
+  --primary2: #0b8a6b;
+  --ring: rgba(16, 163, 127, 0.28);
+
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+
+  /* inputs/buttons */
+  --radius-sm: 14px;
+  --radius-md: 18px;
+
+  --inputBg: rgba(255, 255, 255, 0.06);
+  --inputBorder: rgba(255, 255, 255, 0.12);
+
+  --btnBg: rgba(255, 255, 255, 0.06);
+  --btnBgHover: rgba(255, 255, 255, 0.10);
+
+  /* safe area */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(1000px 520px at 18% 0%, rgba(16, 163, 127, 0.12), transparent 60%),
+    radial-gradient(900px 520px at 80% 0%, rgba(59, 130, 246, 0.10), transparent 62%),
+    linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: none; }
+
+hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
+
+/* layout base */
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* cards */
+.card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* muted */
+.muted { color: var(--muted); }
+
+/* buttons */
+.btn {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--btnBg);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn:hover {
+  background: var(--btnBgHover);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+.btn:active { transform: scale(0.98); }
+
+.btnPrimary {
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  color: #fff;
+  border: 0;
+}
+.btnPrimary:hover { filter: brightness(1.05); }
+
+/* inputs */
+.input,
+.textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--inputBorder);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--inputBg);
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.input::placeholder,
+.textarea::placeholder { color: rgba(229,231,235,0.55); }
+
+.input:focus,
+.textarea:focus {
+  border-color: rgba(16,163,127,0.45);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* ===== Dashboard grid (evita "tela ao lado") ===== */
+.dashGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.dashGrid > * { min-width: 0; }
+@media (min-width: 960px){
+  .dashGrid { grid-template-columns: 360px minmax(0, 1fr); }
+}
+
+/* ===== White card correction (quando usar background branco inline) ===== */
+.card[style*="background: white"],
+.card[style*="background:white"],
+.card[style*="background: #fff"],
+.card[style*="background:#fff"],
+.card[style*="background: rgb(255, 255, 255)"],
+.card[style*="background:rgb(255, 255, 255)"] {
+  color: #0f172a !important;
+}
+.card[style*="background: white"] .muted,
+.card[style*="background:white"] .muted,
+.card[style*="background: #fff"] .muted,
+.card[style*="background:#fff"] .muted,
+.card[style*="background: rgb(255, 255, 255)"] .muted,
+.card[style*="background:rgb(255, 255, 255)"] .muted {
+  color: #334155 !important;
+}
+.card[style*="background: white"] a,
+.card[style*="background:white"] a,
+.card[style*="background: #fff"] a,
+.card[style*="background:#fff"] a,
+.card[style*="background: rgb(255, 255, 255)"] a,
+.card[style*="background:rgb(255, 255, 255)"] a,
+.card[style*="background: white"] h1,
+.card[style*="background:white"] h1,
+.card[style*="background: #fff"] h1,
+.card[style*="background:#fff"] h1,
+.card[style*="background: rgb(255, 255, 255)"] h1,
+.card[style*="background:rgb(255, 255, 255)"] h1,
+.card[style*="background: white"] h2,
+.card[style*="background:white"] h2,
+.card[style*="background: #fff"] h2,
+.card[style*="background:#fff"] h2,
+.card[style*="background: rgb(255, 255, 255)"] h2,
+.card[style*="background:rgb(255, 255, 255)"] h2,
+.card[style*="background: white"] p,
+.card[style*="background:white"] p,
+.card[style*="background: #fff"] p,
+.card[style*="background:#fff"] p,
+.card[style*="background: rgb(255, 255, 255)"] p,
+.card[style*="background:rgb(255, 255, 255)"] p,
+.card[style*="background: white"] span,
+.card[style*="background:white"] span,
+.card[style*="background: #fff"] span,
+.card[style*="background:#fff"] span,
+.card[style*="background: rgb(255, 255, 255)"] span,
+.card[style*="background:rgb(255, 255, 255)"] span {
+  color: #0f172a !important;
+}
+
+/* =========================================================
+   CHATGPT-LIKE CHAT UI (usa classes do ChatBox)
+   ========================================================= */
+
+/* um “shell” com aparência ChatGPT dark */
+.chatShell {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* header do chat */
+.chatHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+}
+
+.chatTitle {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.chatMeta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* área das mensagens com scroll próprio */
+.chatMessages {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  max-height: 62vh;           /* “tela cheia” sem quebrar layout */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* bolhas */
+.chatBubble {
+  padding: 10px 12px;
+  border-radius: 14px;
+  max-width: 92%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.chatUser {
+  justify-self: end;
+  background: rgba(16,163,127,0.18);
+  border-color: rgba(16,163,127,0.25);
+}
+
+.chatAssistant {
+  justify-self: start;
+  background: rgba(255,255,255,0.05);
+}
+
+/* typing dots */
+.chatTyping {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.typingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(229,231,235,0.8);
+  opacity: 0.3;
+  animation: typing 1.2s infinite ease-in-out;
+}
+.typingDot:nth-child(2) { animation-delay: 0.15s; }
+.typingDot:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes typing {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
+  40% { transform: translateY(-3px); opacity: 0.85; }
+}
+
+/* composer FIXO no rodapé do chat (igual ChatGPT) */
+.composer {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 14px calc(14px + var(--safe-bottom));
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(7,10,15,0) 0%,
+    rgba(7,10,15,0.55) 35%,
+    rgba(7,10,15,0.92) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.composerInner {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 10px 10px;
+}
+
+/* botão ícone (anexo) */
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.20);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.iconBtn:hover { background: rgba(255,255,255,0.06); }
+.iconBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* input do composer (textarea) */
+.composerInput {
+  flex: 1;
+  min-height: 40px;
+  max-height: 140px;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+  padding: 8px 6px;
+}
+.composerInput::placeholder { color: rgba(229,231,235,0.55); }
+
+/* chips do arquivo anexado */
+.fileChipRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.fileChip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.fileChip button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.fileChip button:hover { color: var(--text); }
+
+/* Mobile */
+@media (max-width: 520px) {
+  .container { padding: 12px; }
+  .card { padding: 14px; }
+  .chatMessages { max-height: 58vh; }
+  .chatBubble { max-width: 96%; }
+}

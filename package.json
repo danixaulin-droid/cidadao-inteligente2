@@ -1,0 +1,20 @@
+{
+  "name": "cidadao-inteligente",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.2.8",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.2",
+    "openai": "^4.56.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
