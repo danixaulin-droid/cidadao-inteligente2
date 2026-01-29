@@ -8,6 +8,12 @@ const PLANS = {
   pro: { title: "Plano Pro", amount: 24.9 },
 };
 
+function normalizeUrl(u = "") {
+  const s = String(u || "").trim();
+  if (!s) return "";
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}
+
 export async function POST(request) {
   try {
     const supabase = getSupabaseServer();
@@ -27,7 +33,7 @@ export async function POST(request) {
     }
 
     const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
 
     if (!token) {
       return Response.json({ error: "MERCADOPAGO_ACCESS_TOKEN não configurado." }, { status: 500 });
@@ -35,6 +41,9 @@ export async function POST(request) {
     if (!appUrl) {
       return Response.json({ error: "NEXT_PUBLIC_APP_URL não configurado." }, { status: 500 });
     }
+
+    // ✅ (opcional mas MUITO recomendado) garante webhook mesmo sem painel
+    const notificationUrl = `${appUrl}/api/billing/webhook`;
 
     // Criar assinatura (preapproval)
     const payload = {
@@ -49,6 +58,7 @@ export async function POST(request) {
       },
       status: "pending",
       external_reference: `${user.id}:${plan}`,
+      notification_url: notificationUrl,
     };
 
     const resp = await fetch("https://api.mercadopago.com/preapproval", {
@@ -70,16 +80,24 @@ export async function POST(request) {
     }
 
     // Salva referência inicial no Supabase
-    await supabase.from("user_plans").upsert(
+    const { error: upErr } = await supabase.from("user_plans").upsert(
       {
         user_id: user.id,
         plan,
         status: "pending",
         mp_preapproval_id: data?.id || null,
         mp_init_point: data?.init_point || null,
+        updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" }
     );
+
+    if (upErr) {
+      return Response.json(
+        { error: "Falha ao salvar assinatura no Supabase.", details: upErr },
+        { status: 500 }
+      );
+    }
 
     return Response.json({
       init_point: data?.init_point,
