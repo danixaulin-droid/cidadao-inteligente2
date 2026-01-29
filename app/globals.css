@@ -45,6 +45,17 @@ html, body {
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
+/* ===== Scrollbar (discreto, premium) ===== */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  border: 2px solid rgba(0,0,0,0.25);
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+*::-webkit-scrollbar-track { background: rgba(0,0,0,0.15); }
+* { scrollbar-color: rgba(255,255,255,0.14) rgba(0,0,0,0.12); scrollbar-width: thin; }
+
 a { color: inherit; text-decoration: none; }
 a:hover { text-decoration: none; }
 
@@ -65,6 +76,24 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   padding: 16px;
   box-shadow: var(--shadow);
 }
+
+/* ✅ HERO glow (usado no dashboard que te mandei) */
+.heroGlow {
+  position: relative;
+  overflow: hidden;
+}
+.heroGlow::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(720px 260px at 14% 12%, rgba(16,163,127,0.22), transparent 60%),
+    radial-gradient(520px 240px at 88% 18%, rgba(59,130,246,0.14), transparent 55%);
+  filter: blur(14px);
+  opacity: 0.95;
+  pointer-events:none;
+}
+.heroGlow > * { position: relative; }
 
 /* muted */
 .muted { color: var(--muted); }
@@ -128,6 +157,11 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .dashGrid > * { min-width: 0; }
 @media (min-width: 960px){
   .dashGrid { grid-template-columns: 360px minmax(0, 1fr); }
+}
+
+/* ✅ Mobile: mostra 1 coluna e evita “duas telas” */
+@media (max-width: 980px){
+  .dashGrid { grid-template-columns: 1fr !important; }
 }
 
 /* ===== White card correction (quando usar background branco inline) ===== */
@@ -219,7 +253,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   display: grid;
   gap: 10px;
   padding: 14px;
-  max-height: 62vh;           /* “tela cheia” sem quebrar layout */
+  max-height: 62vh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -296,7 +330,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   padding: 10px 10px;
 }
 
-/* botão ícone (anexo) */
 .iconBtn {
   width: 40px;
   height: 40px;
@@ -311,7 +344,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .iconBtn:hover { background: rgba(255,255,255,0.06); }
 .iconBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* input do composer (textarea) */
 .composerInput {
   flex: 1;
   min-height: 40px;
@@ -327,7 +359,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .composerInput::placeholder { color: rgba(229,231,235,0.55); }
 
-/* chips do arquivo anexado */
 .fileChipRow {
   display: flex;
   gap: 10px;
@@ -363,6 +394,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   .chatMessages { max-height: 58vh; }
   .chatBubble { max-width: 96%; }
 }
+
 /* =========================
    Pricing / Planos (AI look)
 ========================= */
