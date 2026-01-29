@@ -8,44 +8,33 @@ const PLANS = {
   pro: { title: "Plano Pro", amount: 24.9 },
 };
 
-function normalizeUrl(u = "") {
-  const s = String(u || "").trim();
-  if (!s) return "";
-  return s.endsWith("/") ? s.slice(0, -1) : s;
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
 }
 
 export async function POST(request) {
   try {
     const supabase = getSupabaseServer();
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr) return json({ error: "Falha ao ler usuário", details: userErr.message }, 401);
 
-    if (!user) {
-      return Response.json({ error: "Você precisa estar logado." }, { status: 401 });
-    }
+    const user = userData?.user;
+    if (!user) return json({ error: "Você precisa estar logado." }, 401);
 
     const body = await request.json().catch(() => ({}));
-    const plan = (body?.plan || "").toLowerCase();
+    const plan = String(body?.plan || "").toLowerCase();
     const picked = PLANS[plan];
-
-    if (!picked) {
-      return Response.json({ error: "Plano inválido." }, { status: 400 });
-    }
+    if (!picked) return json({ error: "Plano inválido." }, 400);
 
     const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-    if (!token) {
-      return Response.json({ error: "MERCADOPAGO_ACCESS_TOKEN não configurado." }, { status: 500 });
-    }
-    if (!appUrl) {
-      return Response.json({ error: "NEXT_PUBLIC_APP_URL não configurado." }, { status: 500 });
-    }
+    if (!token) return json({ error: "MERCADOPAGO_ACCESS_TOKEN não configurado." }, 500);
+    if (!appUrl) return json({ error: "NEXT_PUBLIC_APP_URL não configurado." }, 500);
 
-    // ✅ (opcional mas MUITO recomendado) garante webhook mesmo sem painel
-    const notificationUrl = `${appUrl}/api/billing/webhook`;
-
-    // Criar assinatura (preapproval)
     const payload = {
       reason: `${picked.title} • Cidadão Inteligente`,
       payer_email: user.email,
@@ -58,7 +47,6 @@ export async function POST(request) {
       },
       status: "pending",
       external_reference: `${user.id}:${plan}`,
-      notification_url: notificationUrl,
     };
 
     const resp = await fetch("https://api.mercadopago.com/preapproval", {
@@ -70,41 +58,38 @@ export async function POST(request) {
       body: JSON.stringify(payload),
     });
 
-    const data = await resp.json().catch(() => ({}));
+    const text = await resp.text(); // ← importante: garante que não quebra
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
+    }
 
     if (!resp.ok) {
-      return Response.json(
+      return json(
         { error: data?.message || "Falha ao criar assinatura no Mercado Pago.", details: data },
-        { status: 500 }
+        500
       );
     }
 
-    // Salva referência inicial no Supabase
-    const { error: upErr } = await supabase.from("user_plans").upsert(
+    await supabase.from("user_plans").upsert(
       {
         user_id: user.id,
         plan,
         status: "pending",
         mp_preapproval_id: data?.id || null,
         mp_init_point: data?.init_point || null,
-        updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" }
     );
 
-    if (upErr) {
-      return Response.json(
-        { error: "Falha ao salvar assinatura no Supabase.", details: upErr },
-        { status: 500 }
-      );
-    }
-
-    return Response.json({
+    return json({
       init_point: data?.init_point,
       sandbox_init_point: data?.sandbox_init_point,
       preapproval_id: data?.id,
     });
   } catch (e) {
-    return Response.json({ error: e?.message || "Erro desconhecido." }, { status: 500 });
+    return json({ error: e?.message || "Erro desconhecido." }, 500);
   }
 }
