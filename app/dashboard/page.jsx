@@ -187,6 +187,12 @@ export default function DashboardPage() {
     router.push(continueLink(c.session_id, c.topic));
   }
 
+  // ✅ NOVA CONVERSA (Dashboard) — força o chat criar uma session nova
+  function newConversationFromDashboard() {
+    // pode mudar o topic aqui se quiser: ?topic=geral
+    router.push("/assistente/chat?topic=geral&new=1");
+  }
+
   async function deleteConversation(sessionId) {
     if (!userId || !sessionId || sessionId === "sem-session") {
       alert("Essa conversa não tem session_id. Não é possível excluir com segurança.");
@@ -283,7 +289,7 @@ export default function DashboardPage() {
         <div className="dashTopRow">
           <div style={{ minWidth: 0 }}>
             <h1 className="dashTitle">Dashboard</h1>
-            <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+            <div className="muted" style={{ fontnontSize: 13, marginTop: 6 }}>
               Logado como: <b style={{ color: "var(--text)" }}>{email}</b>
             </div>
             <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
@@ -298,7 +304,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="dashActions">
-            <a className="btn" href="/assistente">+ Nova conversa</a>
+            {/* ✅ Antes era <a href="/assistente"> ... agora força nova sessão */}
+            <button className="btn" type="button" onClick={newConversationFromDashboard}>
+              + Nova conversa
+            </button>
+
             {isAdmin && <a className="btn" href="/admin">Admin</a>}
             <button className="btn" onClick={logout}>Sair</button>
           </div>
