@@ -3,8 +3,12 @@
 import { usePathname } from "next/navigation";
 
 export default function Footer() {
-  const pathname = usePathname();
-  const hide = pathname?.startsWith("/assistente/chat");
+  const pathname = usePathname() || "";
+
+  // ✅ Esconde o footer em TODAS as rotas de chat
+  const hide =
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/assistente/chat");
 
   if (hide) return null;
 
