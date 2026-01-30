@@ -41,6 +41,17 @@ html, body {
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
+/* melhora scroll no mobile */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* evita que o teclado mobile “exploda” layout */
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+}
+
 a { color: inherit; text-decoration: none; }
 a:hover { text-decoration: none; }
 
@@ -111,14 +122,29 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 
 /* =========================================================
-   CHATGPT-LIKE CHAT UI (ChatBox)
+   CHATGPT-LIKE CHAT UI (ChatBox)  ✅ CORRIGIDO (APP-LIKE)
    ========================================================= */
+
+/* deixa o chat ocupar a tela toda (parece app) */
 .chatShell {
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.04);
   border-radius: 18px;
   overflow: hidden;
+
+  /* ✅ vira layout vertical */
+  display: flex;
+  flex-direction: column;
+
+  /* ✅ ocupa quase a tela inteira (respeita header fixo) */
+  min-height: calc(100vh - 72px);
 }
+
+/* em browsers modernos (celular), 100dvh é melhor */
+@supports (height: 100dvh) {
+  .chatShell { min-height: calc(100dvh - 72px); }
+}
+
 .chatHeaderRow {
   display: flex;
   align-items: center;
@@ -131,13 +157,18 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .chatTitle { font-weight: 900; font-size: 16px; }
 .chatMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
+/* ✅ mensagens agora crescem (não ficam presas em 62vh) */
 .chatMessages {
+  flex: 1;
   display: grid;
   gap: 10px;
   padding: 14px;
-  max-height: 62vh;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  /* ajuda o scroll não ficar “travado” perto do composer */
+  padding-bottom: calc(16px + 84px + var(--safe-bottom));
 }
 
 .chatBubble {
@@ -175,7 +206,9 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   40% { transform: translateY(-3px); opacity: 0.85; }
 }
 
+/* ✅ composer grudado no fundo como ChatGPT */
 .composer {
+  flex: 0 0 auto;
   position: sticky;
   bottom: 0;
   padding: 12px 14px calc(14px + var(--safe-bottom));
@@ -199,6 +232,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   border-radius: 16px;
   padding: 10px 10px;
 }
+
 .iconBtn {
   width: 40px; height: 40px;
   border-radius: 12px;
@@ -375,7 +409,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 @media (max-width: 520px) {
   .container { padding: 12px; }
   .card { padding: 14px; }
-  .chatMessages { max-height: 58vh; }
   .chatBubble { max-width: 96%; }
   .dashTitle { font-size: 36px; }
   .iconSquare { width: 42px; height: 42px; }
