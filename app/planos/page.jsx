@@ -1,224 +1,248 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+
+const PLANS = [
+  {
+    key: "basic",
+    name: "Básico",
+    price: "R$ 12,90/mês",
+    subtitle: "Ideal pra quem usa todo dia e quer upload liberado.",
+    features: [
+      "Upload de PDF/imagem (até 10/dia)",
+      "Até 120 mensagens/dia",
+      "Histórico e continuidade da conversa",
+    ],
+  },
+  {
+    key: "pro",
+    name: "Pro",
+    price: "R$ 24,90/mês",
+    subtitle: "Para uso intenso e sem limites.",
+    features: [
+      "Upload ilimitado",
+      "Mensagens ilimitadas",
+      "Prioridade e melhor experiência",
+    ],
+    badge: "Recomendado",
+  },
+];
+
+function normalizeStatus(s) {
+  const t = String(s || "none").toLowerCase();
+  if (t === "authorized" || t === "active") return "active";
+  return t;
+}
+
+async function safeJson(res) {
+  // evita "Unexpected end of JSON input"
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
 
 export default function PlanosPage() {
   const [loading, setLoading] = useState(true);
-  const [currentPlan, setCurrentPlan] = useState("free");
+  const [plan, setPlan] = useState("free");
   const [status, setStatus] = useState("none");
-  const [busy, setBusy] = useState(false);
+
+  const [busyPlan, setBusyPlan] = useState(""); // "basic" | "pro"
   const [err, setErr] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
+  const statusLabel = useMemo(() => {
+    const p = String(plan || "free").toLowerCase();
+    const st = normalizeStatus(status);
 
-    async function loadPlan() {
-      setErr("");
-      setLoading(true);
+    if (p === "free" || st === "none") return "free • status: none";
+    return `${p} • status: ${st}`;
+  }, [plan, status]);
 
-      try {
-        const { data: auth } = await supabase.auth.getUser();
-        const user = auth?.user;
-
-        if (!user) {
-          if (!mounted) return;
-          setCurrentPlan("free");
-          setStatus("none");
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("user_plans")
-          .select("plan,status")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (error) throw new Error(error.message);
-
-        if (!mounted) return;
-        setCurrentPlan(data?.plan || "free");
-        setStatus(data?.status || "none");
-      } catch (e) {
-        if (!mounted) return;
-        setErr(e?.message || "Falha ao carregar seu plano.");
-      } finally {
-        if (!mounted) return;
-        setLoading(false);
-      }
-    }
-
-    loadPlan();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  async function subscribe(plan) {
+  async function refreshStatus() {
     setErr("");
-    setBusy(true);
-
+    setLoading(true);
     try {
-      const res = await fetch("/api/mp/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
+      // chama API status
+      const res = await fetch("/api/billing/status", { method: "GET" });
+      const data = await safeJson(res);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Falha ao iniciar assinatura.");
-
-      if (data?.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        throw new Error("Link de pagamento não retornou. Tente novamente.");
+      if (!res.ok) {
+        throw new Error(data?.error || "Falha ao carregar status do plano.");
       }
+
+      setPlan(String(data?.plan || "free").toLowerCase());
+      setStatus(String(data?.status || "none").toLowerCase());
     } catch (e) {
-      setErr(e?.message || "Erro ao assinar.");
+      setErr(e?.message || "Erro ao carregar status.");
+      setPlan("free");
+      setStatus("none");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
-  const statusLabel =
-    loading ? "carregando..." : `${currentPlan} • status: ${status}`;
+  useEffect(() => {
+    refreshStatus();
+
+    // Atualiza ao logar/deslogar
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      refreshStatus();
+    });
+
+    return () => sub?.subscription?.unsubscribe?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function subscribe(planKey) {
+    setErr("");
+    setBusyPlan(planKey);
+
+    try {
+      const res = await fetch("/api/billing/create-preapproval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planKey }),
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        // mostra erro real do backend (token faltando, app_url faltando, etc)
+        throw new Error(data?.error || "Falha ao iniciar assinatura.");
+      }
+
+      const url = data?.init_point || data?.sandbox_init_point;
+      if (!url) throw new Error("Mercado Pago não retornou link de pagamento.");
+
+      // Redireciona pro checkout
+      window.location.href = url;
+    } catch (e) {
+      setErr(e?.message || "Erro ao assinar.");
+    } finally {
+      setBusyPlan("");
+    }
+  }
+
+  const isActive = normalizeStatus(status) === "active";
 
   return (
     <main className="pricingWrap">
       <div className="pricingHeader">
         <div className="pricingTitle">Planos</div>
         <div className="pricingSub">
-          Desbloqueie upload de documentos, aumente seus limites e tenha uma
-          experiência mais completa com a IA.
+          Desbloqueie upload de documentos, aumente seus limites e tenha uma experiência mais completa com a IA.
         </div>
 
         <div className="planStatusPill">
-          <span style={{ opacity: 0.8 }}>Seu plano atual:</span>
-          <b>{statusLabel}</b>
+          <span>Seu plano atual:</span>{" "}
+          <b>{loading ? "carregando..." : statusLabel}</b>
+          <button
+            className="btn"
+            onClick={refreshStatus}
+            disabled={loading}
+            style={{ padding: "8px 10px", borderRadius: 14 }}
+            title="Atualizar status"
+          >
+            ↻
+          </button>
         </div>
 
-        {err && (
-          <div className="card" style={{ borderRadius: 16, padding: 14 }}>
-            <div style={{ fontWeight: 900 }}>⚠️ Algo deu errado</div>
-            <div className="muted" style={{ marginTop: 6 }}>
-              {err}
+        {err ? (
+          <div className="statusChip err" style={{ marginTop: 8 }}>
+            <b>⚠️ Algo deu errado</b>
+            <div style={{ marginTop: 6 }}>{err}</div>
+            <div className="muted" style={{ marginTop: 8, fontSize: 12, lineHeight: 1.5 }}>
+              Dica: se você ainda não colocou as variáveis do Mercado Pago na Vercel, o botão Assinar vai dar erro.
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="pricingGrid">
-        {/* Básico */}
-        <div className="planCard">
-          <div className="planCardInner">
-            <div className="planTopRow">
-              <div>
-                <div className="planName">Básico</div>
-                <div className="muted" style={{ marginTop: 6 }}>
-                  Ideal pra quem usa todo dia e quer upload liberado.
+        {PLANS.map((p) => {
+          const current = String(plan).toLowerCase() === p.key;
+          const disabled = busyPlan && busyPlan !== p.key;
+
+          return (
+            <div key={p.key} className="planCard">
+              {p.badge ? <div className="planBadge">{p.badge}</div> : null}
+
+              <div className="planCardInner">
+                <div className="planTopRow">
+                  <div>
+                    <div className="planName">{p.name}</div>
+                    <div className="planHint" style={{ marginTop: 6 }}>
+                      {p.subtitle}
+                    </div>
+                  </div>
+
+                  <div className="planPrice">
+                    <div className="planPriceMain">{p.price}</div>
+                    <div className="planPriceSub">Renovação automática</div>
+                  </div>
+                </div>
+
+                <ul className="planList">
+                  {p.features.map((f) => (
+                    <li key={f} className="planItem">
+                      <span className="planIcon">✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="planCtaRow">
+                  <button
+                    className="planBtn"
+                    onClick={() => subscribe(p.key)}
+                    disabled={loading || disabled}
+                    title={current && isActive ? "Você já está neste plano" : "Assinar"}
+                  >
+                    {busyPlan === p.key ? "Abrindo Mercado Pago…" : current && isActive ? "Plano ativo" : `Assinar ${p.name}`}
+                  </button>
+
+                  <button
+                    className="planGhostBtn"
+                    onClick={refreshStatus}
+                    disabled={loading || !!busyPlan}
+                    title="Atualizar status"
+                  >
+                    Ver status
+                  </button>
+                </div>
+
+                <div className="planFooterNote">
+                  Cancelamento e gestão da assinatura pelo Mercado Pago a qualquer momento.
                 </div>
               </div>
-
-              <div className="planPrice">
-                <div className="planPriceMain">R$ 12,90/mês</div>
-                <div className="planPriceSub">Renovação automática</div>
-              </div>
             </div>
-
-            <ul className="planList">
-              <li className="planItem">
-                <span className="planIcon">✅</span>
-                Upload de PDF/imagem (até 10/dia)
-              </li>
-              <li className="planItem">
-                <span className="planIcon">✅</span>
-                Até 120 mensagens/dia
-              </li>
-              <li className="planItem">
-                <span className="planIcon">✅</span>
-                Histórico e continuidade da conversa
-              </li>
-            </ul>
-
-            <div className="planCtaRow">
-              <button
-                className="planBtn"
-                onClick={() => subscribe("basic")}
-                disabled={busy}
-              >
-                {busy ? "Aguarde..." : "Assinar Básico"}
-              </button>
-
-              <div className="planHint">
-                Cancelamento pelo Mercado Pago a qualquer momento.
-              </div>
-            </div>
-
-            <div className="planFooterNote">
-              💡 Dica: se você usa upload com frequência, o Básico já resolve bem.
-            </div>
-          </div>
-        </div>
-
-        {/* Pro */}
-        <div className="planCard">
-          <div className="planBadge">Mais popular</div>
-
-          <div className="planCardInner">
-            <div className="planTopRow">
-              <div>
-                <div className="planName">Pro</div>
-                <div className="muted" style={{ marginTop: 6 }}>
-                  Para uso intenso, respostas rápidas e sem limites apertados.
-                </div>
-              </div>
-
-              <div className="planPrice">
-                <div className="planPriceMain">R$ 24,90/mês</div>
-                <div className="planPriceSub">Renovação automática</div>
-              </div>
-            </div>
-
-            <ul className="planList">
-              <li className="planItem">
-                <span className="planIcon">🚀</span>
-                Upload ilimitado
-              </li>
-              <li className="planItem">
-                <span className="planIcon">🚀</span>
-                Mensagens ilimitadas
-              </li>
-              <li className="planItem">
-                <span className="planIcon">🚀</span>
-                Prioridade e limites maiores
-              </li>
-            </ul>
-
-            <div className="planCtaRow">
-              <button
-                className="planBtn"
-                onClick={() => subscribe("pro")}
-                disabled={busy}
-              >
-                {busy ? "Aguarde..." : "Assinar Pro"}
-              </button>
-
-              <div className="planHint">
-                Melhor custo/benefício pra quem usa todo dia.
-              </div>
-            </div>
-
-            <div className="planFooterNote">
-              ⚡ Pro é ótimo para análise de PDFs e uso contínuo no dia a dia.
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      <div className="planFooterNote" style={{ marginTop: 16 }}>
-        Pagamento por assinatura via Mercado Pago. Ao assinar, você concorda com
-        renovação mensal automática.
+      <div className="muted" style={{ marginTop: 14, fontSize: 12, lineHeight: 1.6 }}>
+        ⚠️ Importante: para o pagamento funcionar você precisa configurar na Vercel:
+        <br />
+        <b>MERCADOPAGO_ACCESS_TOKEN</b> e <b>NEXT_PUBLIC_APP_URL</b>.
       </div>
+
+      <style jsx>{`
+        /* Chip de status (quando não existe no seu CSS) */
+        .statusChip {
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(0, 0, 0, 0.18);
+          border-radius: 16px;
+          padding: 12px 12px;
+        }
+        .statusChip.err {
+          border-color: rgba(255, 180, 0, 0.25);
+          background: rgba(255, 180, 0, 0.08);
+        }
+      `}</style>
     </main>
   );
 }
