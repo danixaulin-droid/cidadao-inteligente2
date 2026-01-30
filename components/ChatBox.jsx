@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 const BUCKET_DEFAULT = "uploads";
@@ -62,6 +62,10 @@ export default function ChatBox({
   sessionFromUrl = "",
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✅ lê new=1 da URL
+  const forceNewFromUrl = (searchParams?.get("new") || "").trim() === "1";
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,6 +109,20 @@ export default function ChatBox({
     el.style.height = h + "px";
   }, [input]);
 
+  // ✅ cria nova sessão e salva no localStorage
+  function createFreshSession(uid) {
+    const fresh = uuid();
+    const key = storageKey(uid, topic);
+    localStorage.setItem(key, fresh);
+    setSessionId(fresh);
+    setMessages([]);
+    setAttached(null);
+    setErrText("");
+    setInput("");
+    requestAnimationFrame(() => taRef.current?.focus());
+    return fresh;
+  }
+
   // boot auth + session
   useEffect(() => {
     let mounted = true;
@@ -128,8 +146,24 @@ export default function ChatBox({
 
       const key = storageKey(user.id, topic);
 
-      // 1) session da URL
+      // ✅ 0) se URL tem new=1 => força criar nova sessão
+      // (mas se veio session=..., session sempre ganha)
       const incoming = (sessionFromUrl || "").trim();
+      if (!incoming && forceNewFromUrl) {
+        createFreshSession(user.id);
+
+        // opcional: remove new=1 da URL para não recriar sempre ao recarregar
+        // mantém topic e remove new
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("new");
+          window.history.replaceState({}, "", url.toString());
+        } catch {}
+
+        return;
+      }
+
+      // 1) session da URL (continua conversa)
       if (incoming) {
         localStorage.setItem(key, incoming);
         setSessionId(incoming);
@@ -144,16 +178,14 @@ export default function ChatBox({
       }
 
       // 3) nova
-      const fresh = uuid();
-      localStorage.setItem(key, fresh);
-      setSessionId(fresh);
+      createFreshSession(user.id);
     }
 
     boot();
     return () => {
       mounted = false;
     };
-  }, [topic, sessionFromUrl]);
+  }, [topic, sessionFromUrl, forceNewFromUrl]);
 
   async function loadHistory({ reset = true } = {}) {
     setErrText("");
@@ -309,17 +341,7 @@ export default function ChatBox({
 
   function newConversation() {
     if (!userId) return;
-
-    const fresh = uuid();
-    const key = storageKey(userId, topic);
-    localStorage.setItem(key, fresh);
-    setSessionId(fresh);
-
-    setMessages([]);
-    setAttached(null);
-    setErrText("");
-    setInput("");
-    requestAnimationFrame(() => taRef.current?.focus());
+    createFreshSession(userId);
   }
 
   function onKeyDown(e) {
