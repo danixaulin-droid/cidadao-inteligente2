@@ -20,7 +20,13 @@ function isAllowedFile(name = "") {
 function getFileType(name = "") {
   const n = name.toLowerCase();
   if (n.endsWith(".pdf")) return "pdf";
-  if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".webp") || n.endsWith(".heic"))
+  if (
+    n.endsWith(".png") ||
+    n.endsWith(".jpg") ||
+    n.endsWith(".jpeg") ||
+    n.endsWith(".webp") ||
+    n.endsWith(".heic")
+  )
     return "image";
   return "unknown";
 }
@@ -52,7 +58,7 @@ export default function ChatBox({
   context = "",
   enableUpload = true,
   bucket = BUCKET_DEFAULT,
-  sessionFromUrl = "", // ✅ NOVO
+  sessionFromUrl = "",
 }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,12 +84,15 @@ export default function ChatBox({
   const fileRef = useRef(null);
   const taRef = useRef(null);
 
-  function scrollToBottom() {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  function scrollToBottom(force = false) {
+    // Se quiser melhorar depois: só auto-scroll quando o user estiver perto do fim.
+    // Por enquanto, mantém comportamento simples.
+    if (force) endRef.current?.scrollIntoView({ behavior: "auto" });
+    else endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(false);
   }, [messages, uploading, loading, historyLoading]);
 
   // auto-resize textarea
@@ -91,11 +100,11 @@ export default function ChatBox({
     const el = taRef.current;
     if (!el) return;
     el.style.height = "0px";
-    const h = Math.min(el.scrollHeight, 160);
+    const h = Math.min(el.scrollHeight, 140);
     el.style.height = h + "px";
   }, [input]);
 
-  // ✅ boot auth + session (prioriza sessionFromUrl se existir)
+  // boot auth + session
   useEffect(() => {
     let mounted = true;
 
@@ -118,7 +127,7 @@ export default function ChatBox({
 
       const key = storageKey(user.id, topic);
 
-      // ✅ 1) se veio session na URL, essa é a sessão que deve abrir
+      // 1) session da URL
       const incoming = (sessionFromUrl || "").trim();
       if (incoming) {
         localStorage.setItem(key, incoming);
@@ -126,14 +135,14 @@ export default function ChatBox({
         return;
       }
 
-      // ✅ 2) senão, usa a última sessão salva
+      // 2) última sessão salva
       const saved = localStorage.getItem(key);
       if (saved) {
         setSessionId(saved);
         return;
       }
 
-      // ✅ 3) senão, cria nova
+      // 3) nova
       const fresh = uuid();
       localStorage.setItem(key, fresh);
       setSessionId(fresh);
@@ -187,6 +196,7 @@ export default function ChatBox({
       if (reset) setMessages([]);
     } finally {
       setHistoryLoading(false);
+      requestAnimationFrame(() => scrollToBottom(true));
     }
   }
 
@@ -241,6 +251,7 @@ export default function ChatBox({
       setMessages((m) => [...m, { role: "assistant", content: e?.message || "Falha ao anexar arquivo." }]);
     } finally {
       setUploading(false);
+      requestAnimationFrame(() => taRef.current?.focus());
     }
   }
 
@@ -274,14 +285,12 @@ export default function ChatBox({
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok && data?.answer) {
         setMessages((m) => [...m, { role: "assistant", content: data.answer }]);
       } else if (res.status === 402) {
-        const msg =
-          (data?.error || "Para continuar, escolha um plano.") +
-          "\n\n👉 Abra **Planos**: /planos";
+        const msg = (data?.error || "Para continuar, escolha um plano.") + "\n\n👉 Abra **Planos**: /planos";
         setMessages((m) => [...m, { role: "assistant", content: msg }]);
       } else {
         setMessages((m) => [
@@ -309,6 +318,7 @@ export default function ChatBox({
     setAttached(null);
     setErrText("");
     setInput("");
+    requestAnimationFrame(() => taRef.current?.focus());
   }
 
   function onKeyDown(e) {
@@ -319,26 +329,44 @@ export default function ChatBox({
   }
 
   return (
-    <section className="chatShell">
-      <div className="chatHeaderRow">
-        <div style={{ minWidth: 0 }}>
-          <div className="chatTitle">Cidadão Inteligente</div>
-          <div className="chatMeta">
-            Tema: <b style={{ color: "var(--text)" }}>{topic}</b> • conversa salva automaticamente
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={historyLoading || loading}>
-            {historyLoading ? "Carregando..." : "Recarregar"}
-          </button>
-          <button className="btn" onClick={newConversation} disabled={loading || historyLoading}>
-            Nova
-          </button>
-        </div>
+    // ✅ Agora o ChatBox é só "corpo" (mensagens + composer), sem duplicar shell/header
+    <section
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0, // essencial pro scroll interno
+      }}
+    >
+      {/* Mini toolbar (discreta) */}
+      <div
+        style={{
+          padding: 10,
+          display: "flex",
+          gap: 10,
+          justifyContent: "flex-end",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(0,0,0,0.10)",
+        }}
+      >
+        <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={historyLoading || loading}>
+          {historyLoading ? "Carregando..." : "Recarregar"}
+        </button>
+        <button className="btn" onClick={newConversation} disabled={loading || historyLoading}>
+          Nova
+        </button>
       </div>
 
-      <div className="chatMessages">
+      {/* ✅ Mensagens ocupam a área toda */}
+      <div
+        className="chatMessages"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: "none", // mata o 62vh do CSS no mobile
+          paddingBottom: 10,
+        }}
+      >
         {errText ? (
           <div className="muted" style={{ fontSize: 14 }}>
             {errText}
@@ -368,6 +396,7 @@ export default function ChatBox({
         <div ref={endRef} />
       </div>
 
+      {/* ✅ Composer já é sticky e agora funciona como "barra fixa" */}
       <div className="composer">
         {enableUpload && (attached?.displayName || uploading) && (
           <div className="fileChipRow">
