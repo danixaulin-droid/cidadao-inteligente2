@@ -8,7 +8,9 @@ export default function LayoutChrome({ children }) {
   const pathname = usePathname() || "";
 
   const isChat =
-    pathname.startsWith("/chat") || pathname.startsWith("/assistente/chat");
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/assistente/chat") ||
+    pathname.startsWith("/assistente");
 
   return (
     <>
@@ -16,9 +18,14 @@ export default function LayoutChrome({ children }) {
 
       <main
         style={{
-          minHeight: isChat ? "100dvh" : "calc(100dvh - 72px)",
+          minHeight: "100dvh",
           height: isChat ? "100dvh" : "auto",
-          overflow: isChat ? "hidden" : "visible",
+
+          /* 🔑 AQUI ESTÁ A CORREÇÃO */
+          overflowY: isChat ? "hidden" : "auto",
+          overflowX: "hidden",
+
+          WebkitOverflowScrolling: "touch", // iOS / PWA
         }}
       >
         {children}
