@@ -143,3 +143,41 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
              12px calc(12px + var(--safe-left));
   }
 }
+/* =========================
+   CHAT – CONTROLE REAL
+========================= */
+
+.chatFull {
+  display: flex;
+  flex-direction: column;
+
+  height: 100dvh;
+  max-height: 100dvh;
+
+  overflow: hidden; /* 🔒 trava TUDO aqui */
+}
+
+/* área que ROLA */
+.chatMessagesFull {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 14px;
+  padding-bottom: calc(16px + 72px + var(--safe-bottom));
+}
+
+/* input fixo no rodapé do chat */
+.composer {
+  flex: 0 0 auto;
+
+  position: relative; /* 🔑 NÃO sticky */
+  bottom: 0;
+
+  padding: 12px 14px calc(14px + var(--safe-bottom));
+  border-top: 1px solid rgba(255,255,255,0.08);
+
+  background: rgba(7,10,15,0.96);
+}
