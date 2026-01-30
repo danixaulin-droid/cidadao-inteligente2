@@ -11,16 +11,16 @@ export default function ChatPage() {
   );
 }
 
-/* Loading simples, sem card, sem quebrar layout */
 function ChatLoading() {
   return (
     <main
       style={{
-        minHeight: "calc(100vh - 72px)", // respeita o Header
+        height: "100dvh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: 16,
+        overflow: "hidden",
       }}
     >
       <div
@@ -36,11 +36,11 @@ function ChatLoading() {
         <div style={{ fontSize: 18, fontWeight: 800 }}>
           Iniciando conversa…
         </div>
-        <p className="muted" style={{ marginTop: 8 }}>
+
+        <p style={{ marginTop: 8, opacity: 0.6 }}>
           Preparando histórico e interface do chat.
         </p>
 
-        {/* Skeleton simples estilo ChatGPT */}
         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
           <div style={skeleton(40)} />
           <div style={skeleton(65)} />
