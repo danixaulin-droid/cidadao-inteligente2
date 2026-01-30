@@ -32,12 +32,14 @@
 
 * { box-sizing: border-box; }
 
-/* ✅ ESSENCIAL: altura real 100% (evita espaço embaixo) */
+/* ✅ ESSENCIAL: PWA sem “buraco” (trava altura real e remove scroll do body) */
 html, body {
   height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: hidden; /* ✅ evita scroll fantasma no PWA */
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background:
@@ -46,15 +48,20 @@ html, body {
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
-/* melhora scroll no mobile */
+/* melhora scroll no mobile (só dentro do chat) */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ✅ importante: evita “pulo” por causa do teclado e barra do navegador */
-@supports (height: 100dvh) {
-  body { min-height: 100dvh; }
+/* ✅ prioridade: 100svh (PWA/standalone) */
+@supports (height: 100svh) {
+  html, body { height: 100svh; min-height: 100svh; }
+}
+
+/* fallback */
+@supports not (height: 100svh) and (height: 100dvh) {
+  html, body { height: 100dvh; min-height: 100dvh; }
 }
 
 a { color: inherit; text-decoration: none; }
@@ -292,11 +299,10 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 /* =========================
    CHAT FULL (SEM HEADER)
-   ✅ FIX CENTRALIZAÇÃO (PWA)
+   ✅ FIX CENTRALIZAÇÃO + FIX “BURACO” PWA
    ========================= */
 
 .chatFull{
-  height: 100%;
   display:flex;
   flex-direction:column;
   min-height:0;
@@ -304,13 +310,15 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   border-radius: 0;
   background: transparent;
 
-  /* ✅ isso resolve o “grudado à esquerda” no app instalado */
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
+
+  overflow: hidden;
+  height: 100svh;     /* ✅ definitivo no PWA */
 }
 
-@supports (height: 100dvh) {
+@supports not (height: 100svh) and (height: 100dvh) {
   .chatFull { height: 100dvh; }
 }
 
@@ -359,7 +367,12 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   flex: 1;
   min-height: 0;
   max-height: none !important;
-  padding-bottom: calc(10px + var(--safe-bottom));
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* ✅ aqui é o fix do “buraco”: NÃO usar 96px fixo */
+  padding-bottom: calc(16px + 84px + var(--safe-bottom));
 }
 
 /* força composer ficar no rodapé */
@@ -673,8 +686,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 /* =========================================================
    PREMIUM UPGRADE (IA feel)
-   - Não quebra layout atual
-   - Só melhora visual e micro-interações
    ========================================================= */
 
 :root{
@@ -685,7 +696,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   --stroke: rgba(255,255,255,0.10);
 }
 
-/* Botões: mais “premium” */
 .btn{
   border-color: rgba(255,255,255,0.14);
   background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
@@ -701,7 +711,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .btn:active{ transform: scale(0.975); }
 
-/* CTA: Enviar / botões primários com brilho */
 .btnPrimary{
   background: linear-gradient(135deg, #10a37f 0%, #1ecfa3 45%, #0b8a6b 100%);
   box-shadow:
@@ -717,7 +726,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
     inset 0 1px 0 rgba(255,255,255,0.34);
 }
 
-/* Barra do chat (topo): glass + glow leve */
 .chatMiniBar{
   background:
     radial-gradient(520px 220px at 20% 0%, rgba(16,163,127,0.16), transparent 60%),
@@ -727,7 +735,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 
-/* Botões do topo: mais premium */
 .miniIconBtn{
   background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
   border-color: rgba(255,255,255,0.14);
@@ -740,7 +747,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .miniIconBtn:active{ transform: scale(0.97); }
 
-/* Composer: foco com glow (cara de IA) */
 .composer{
   border-top: 1px solid rgba(255,255,255,0.08);
 }
@@ -761,7 +767,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
     inset 0 1px 0 rgba(255,255,255,0.18);
 }
 
-/* Botão de anexo: glass */
 .iconBtn{
   background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.10));
   border-color: rgba(255,255,255,0.12);
@@ -771,7 +776,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 .iconBtn:hover{ background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
 
-/* Mensagens: mais “soft”, com leve profundidade */
 .chatBubble{
   border-color: rgba(255,255,255,0.10);
   box-shadow: 0 10px 26px rgba(0,0,0,0.18);
@@ -783,31 +787,14 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   background: linear-gradient(180deg, rgba(16,163,127,0.22), rgba(16,163,127,0.12));
 }
 
-/* Chip do arquivo: premium pill */
 .fileChip{
   background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.05));
   border-color: rgba(255,255,255,0.12);
   box-shadow: 0 10px 22px rgba(0,0,0,0.18);
 }
 
-/* Melhor “toque” no mobile */
 @media (hover: none) {
   .btn:hover,
   .miniIconBtn:hover,
   .iconBtn:hover { filter: none; }
-}
-/* ✅ FIX PWA/MOBILE: evita “buraco” embaixo por causa do 100vh/100dvh */
-@supports (height: 100svh) {
-  html, body { min-height: 100svh; }
-  .chatFull { height: 100svh !important; }
-}
-
-/* fallback (quando 100svh não existe) */
-@supports not (height: 100svh) {
-  .chatFull { height: 100dvh !important; }
-}
-
-/* garante que a área das mensagens sempre “encoste” no composer */
-.chatMessagesFull{
-  padding-bottom: calc(16px + 96px + var(--safe-bottom)) !important; /* 96px ~ altura do composer */
 }
