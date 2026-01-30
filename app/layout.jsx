@@ -1,6 +1,5 @@
 import "./globals.css";
 import PWARegister from "../components/PWARegister";
-import Header from "./components/Header";
 
 export const metadata = {
   title: "Cidadão Inteligente",
@@ -17,28 +16,30 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#0b0f14" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
       </head>
 
-      <body style={{ margin: 0 }}>
-        <Header />
+      <body
+        style={{
+          margin: 0,
+          minHeight: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* ❌ HEADER REMOVIDO */}
 
-        {/* ✅ NÃO colocar outro container aqui */}
-        {children}
+        {/* ✅ Conteúdo ocupa a tela toda */}
+        <main style={{ flex: 1, minHeight: 0 }}>
+          {children}
+        </main>
 
         <PWARegister />
 
-        <footer
-          style={{
-            padding: 16,
-            borderTop: "1px solid rgba(255,255,255,0.10)",
-            marginTop: 24,
-          }}
-        >
-          <div className="container">
-            <small>© {new Date().getFullYear()} Cidadão Inteligente</small>
-          </div>
-        </footer>
+        {/* ❌ Footer removido para experiência tipo ChatGPT */}
       </body>
     </html>
   );
