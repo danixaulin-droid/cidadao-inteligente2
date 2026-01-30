@@ -11,46 +11,35 @@ export default function AssistenteChatClientPage() {
 
   const context = `Tema: ${topic}`;
 
-  const title = `Chat • ${topic.charAt(0).toUpperCase() + topic.slice(1)}`;
-
   return (
     <main
-      className="container"
       style={{
-        minHeight: "calc(100dvh - 72px)", // respeita Header sticky
+        height: "calc(100vh - 64px)", // altura total menos header
         display: "flex",
         flexDirection: "column",
-        paddingTop: 12,
-        paddingBottom: 12,
+        overflow: "hidden",
       }}
     >
-      {/* Shell do chat em tela cheia (sem "card pequeno") */}
-      <section
-        className="chatShell"
+      {/* Header do chat */}
+      <div
         style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: 0, // IMPORTANTE pro scroll interno funcionar
+          padding: "16px 16px 12px",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.05))",
         }}
       >
-        {/* Header do chat */}
-        <div className="chatHeaderRow">
-          <div style={{ minWidth: 0 }}>
-            <div className="chatTitle" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {title}
-            </div>
-            <div className="chatMeta">
-              Envie sua dúvida e, se quiser, anexe PDF ou imagem para eu analisar.
-            </div>
-          </div>
-        </div>
+        <h1 style={{ margin: 0 }}>
+          Chat • {topic.charAt(0).toUpperCase() + topic.slice(1)}
+        </h1>
+        <p className="muted" style={{ marginTop: 6 }}>
+          Envie sua dúvida e, se quiser, anexe PDF ou imagem para eu analisar.
+        </p>
+      </div>
 
-        {/* ChatBox ocupa o resto da altura */}
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
-        </div>
-      </section>
+      {/* Chat ocupa TODO o resto da tela */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
+      </div>
     </main>
   );
 }
