@@ -7,7 +7,6 @@ import { useRouter, usePathname } from "next/navigation";
 
 const ADMIN_EMAIL = "vandilmar19@gmail.com";
 
-// WhatsApp (somente no menu ☰)
 const WHATSAPP_NUMBER = "5517996559435";
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Olá! Vim pelo Cidadão Inteligente e preciso de ajuda."
@@ -16,12 +15,6 @@ const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponen
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-
-  // ✅ ESCONDER HEADER APENAS NO CHAT
-  // cobre /assistente/chat e qualquer subrota tipo /assistente/chat?topic=...
-  if (pathname?.startsWith("/assistente/chat")) {
-    return null;
-  }
 
   const [userEmail, setUserEmail] = useState("");
   const [open, setOpen] = useState(false);
@@ -50,12 +43,10 @@ export default function Header() {
     };
   }, []);
 
-  // Fecha menu ao mudar de rota
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // ESC para fechar
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") setOpen(false);
@@ -64,7 +55,6 @@ export default function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Clique fora para fechar
   useEffect(() => {
     function onDown(e) {
       if (!open) return;
@@ -76,7 +66,6 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  // Trava scroll do body quando o menu abre (mobile feel)
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -105,20 +94,23 @@ export default function Header() {
         background: "rgba(8, 10, 22, 0.75)",
         backdropFilter: "blur(10px)",
         borderBottom: "1px solid rgba(255,255,255,0.10)",
+        height: 72,                 /* ✅ fixa a altura */
+        display: "flex",
+        alignItems: "center",
       }}
     >
       <div
         className="container"
         style={{
+          width: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingTop: 10,
-          paddingBottom: 10,
           gap: 10,
+          paddingTop: 0,
+          paddingBottom: 0,
         }}
       >
-        {/* Logo */}
         <Link
           href="/"
           onClick={() => setOpen(false)}
@@ -157,7 +149,6 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* Botão menu ☰ */}
         <button
           className="btn"
           aria-label="Abrir menu"
@@ -173,10 +164,8 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Overlay + Menu (drawer-like) */}
       {open && (
         <>
-          {/* overlay */}
           <div
             onClick={() => setOpen(false)}
             style={{
@@ -187,12 +176,11 @@ export default function Header() {
             }}
           />
 
-          {/* painel */}
           <div
             ref={panelRef}
             style={{
               position: "fixed",
-              top: 62,
+              top: 72,               /* ✅ bate com a altura do header */
               right: 12,
               left: 12,
               zIndex: 60,
