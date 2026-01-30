@@ -24,7 +24,7 @@
   --btnBg: rgba(255, 255, 255, 0.06);
   --btnBgHover: rgba(255, 255, 255, 0.10);
 
-  /* safe-area PWA */
+  /* ✅ safe-area para PWA/standalone */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -32,45 +32,48 @@
 
 * { box-sizing: border-box; }
 
-/* ======================================================
-   BASE DO APP (HOME / DASHBOARD / PLANOS ROLAM)
-   ====================================================== */
-
+/* ✅ ESSENCIAL: PWA sem “buraco” (trava altura real e remove scroll do body) */
 html, body {
-  height: auto;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-
   overflow-x: hidden;
-  overflow-y: auto; /* ✅ HOME ROLA */
-
+  overflow-y: hidden; /* ✅ evita scroll fantasma no PWA */
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-
   background:
     radial-gradient(1000px 520px at 18% 0%, rgba(16, 163, 127, 0.12), transparent 60%),
     radial-gradient(900px 520px at 80% 0%, rgba(59, 130, 246, 0.10), transparent 62%),
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
+/* melhora scroll no mobile (só dentro do chat) */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ✅ prioridade: 100svh (PWA/standalone) */
 @supports (height: 100svh) {
-  html, body { min-height: 100svh; }
+  html, body { height: 100svh; min-height: 100svh; }
+}
+
+/* fallback */
+@supports not (height: 100svh) and (height: 100dvh) {
+  html, body { height: 100dvh; min-height: 100dvh; }
 }
 
 a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: none; }
+
 hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 .container {
   max-width: 980px;
   margin: 0 auto;
-  padding: 16px calc(16px + var(--safe-right))
-           16px calc(16px + var(--safe-left));
+  /* ✅ safe-area left/right (PWA) */
+  padding: 16px calc(16px + var(--safe-right)) 16px calc(16px + var(--safe-left));
 }
 
 .card {
@@ -83,101 +86,715 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 .muted { color: var(--muted); }
 
-/* ======================================================
-   BOTÕES
-   ====================================================== */
-
+/* buttons */
 .btn {
   appearance: none;
+  -webkit-appearance: none;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: var(--btnBg);
   color: var(--text);
   cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
+.btn:hover {
+  background: var(--btnBgHover);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+.btn:active { transform: scale(0.98); }
 
 .btnPrimary {
   background: linear-gradient(135deg, var(--primary), var(--primary2));
   color: #fff;
   border: 0;
 }
+.btnPrimary:hover { filter: brightness(1.05); }
 
-/* ======================================================
-   CHAT (TRAVA SOMENTE O CHAT)
-   ====================================================== */
+/* inputs */
+.input,
+.textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--inputBorder);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--inputBg);
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.input::placeholder,
+.textarea::placeholder { color: rgba(229,231,235,0.55); }
+.input:focus,
+.textarea:focus {
+  border-color: rgba(16,163,127,0.45);
+  box-shadow: 0 0 0 4px var(--ring);
+}
 
-.chatFull {
+/* =========================================================
+   CHAT UI (ChatBox)
+   ========================================================= */
+
+.chatShell {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100svh;
-  overflow: hidden; /* ✅ trava scroll global só no chat */
+  min-height: calc(100vh - 72px);
+}
+@supports (height: 100dvh) {
+  .chatShell { min-height: calc(100dvh - 72px); }
+}
+
+.chatHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+}
+.chatTitle { font-weight: 900; font-size: 16px; }
+.chatMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* mensagens (base) */
+.chatMessages {
+  flex: 1;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  /* ✅ safe-area left/right */
+  padding-left: calc(14px + var(--safe-left));
+  padding-right: calc(14px + var(--safe-right));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(16px + 84px + var(--safe-bottom));
+}
+
+.chatBubble {
+  padding: 10px 12px;
+  border-radius: 14px;
+  max-width: 92%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.chatUser {
+  justify-self: end;
+  background: rgba(16,163,127,0.18);
+  border-color: rgba(16,163,127,0.25);
+}
+.chatAssistant {
+  justify-self: start;
+  background: rgba(255,255,255,0.05);
+}
+
+.chatTyping { display: inline-flex; gap: 6px; align-items: center; }
+.typingDot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: rgba(229,231,235,0.8);
+  opacity: 0.3;
+  animation: typing 1.2s infinite ease-in-out;
+}
+.typingDot:nth-child(2) { animation-delay: 0.15s; }
+.typingDot:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes typing {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
+  40% { transform: translateY(-3px); opacity: 0.85; }
+}
+
+/* composer */
+.composer {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  padding: 12px 14px calc(14px + var(--safe-bottom));
+  /* ✅ safe-area left/right */
+  padding-left: calc(14px + var(--safe-left));
+  padding-right: calc(14px + var(--safe-right));
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(7,10,15,0) 0%,
+    rgba(7,10,15,0.55) 35%,
+    rgba(7,10,15,0.92) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.composerInner {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 10px 10px;
+}
+
+.iconBtn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.20);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.iconBtn:hover { background: rgba(255,255,255,0.06); }
+.iconBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.composerInput {
+  flex: 1;
+  min-height: 40px;
+  max-height: 140px;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+  padding: 8px 6px;
+}
+.composerInput::placeholder { color: rgba(229,231,235,0.55); }
+
+.fileChipRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.fileChip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 12px;
+}
+.fileChip button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.fileChip button:hover { color: var(--text); }
+
+/* =========================
+   CHAT FULL (SEM HEADER)
+   ✅ FIX CENTRALIZAÇÃO + FIX “BURACO” PWA
+   ========================= */
+
+.chatFull{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+
+  overflow: hidden;
+  height: 100svh;     /* ✅ definitivo no PWA */
 }
 
 @supports not (height: 100svh) and (height: 100dvh) {
   .chatFull { height: 100dvh; }
 }
 
-.chatMessagesFull {
+/* barra mínima com ícones */
+.chatMiniBar{
+  flex: 0 0 auto;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+
+  /* ✅ safe-area left/right */
+  padding-left: calc(12px + var(--safe-left));
+  padding-right: calc(12px + var(--safe-right));
+
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.miniBarSpacer{ flex: 1; }
+
+.miniIconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  cursor: pointer;
+  display:grid;
+  place-items:center;
+  font-size: 18px;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.miniIconBtn:hover{
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.18);
+}
+.miniIconBtn:active{ transform: scale(0.98); }
+.miniIconBtn:disabled{ opacity: 0.55; cursor: not-allowed; }
+
+/* mensagens em full */
+.chatMessagesFull{
   flex: 1;
+  min-height: 0;
+  max-height: none !important;
+
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+
+  /* ✅ aqui é o fix do “buraco”: NÃO usar 96px fixo */
   padding-bottom: calc(16px + 84px + var(--safe-bottom));
 }
 
-.composer {
+/* força composer ficar no rodapé */
+.composerFixed{
   position: sticky;
   bottom: 0;
-  padding: 12px 14px calc(14px + var(--safe-bottom));
-  border-top: 1px solid rgba(255,255,255,0.08);
-  background: rgba(7,10,15,0.95);
 }
 
-/* ======================================================
-   MOBILE
-   ====================================================== */
+/* Mobile */
+@media (max-width: 520px) {
+  .container { padding: 12px calc(12px + var(--safe-right)) 12px calc(12px + var(--safe-left)); }
+  .card { padding: 14px; }
+  .chatBubble { max-width: 96%; }
+}
+
+/* =========================================================
+   DASHBOARD (NOVO, LIMPO, APP-LIKE)
+   ========================================================= */
+.dashTop { padding: 14px; }
+.dashTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dashTitle {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 950;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+}
+.dashActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashCard { padding: 14px; }
+.dashHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.dashSectionTitle { font-weight: 950; font-size: 18px; }
+
+.dashFilters {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  grid-template-columns: 1fr 1fr auto;
+}
+@media (max-width: 860px) {
+  .dashFilters { grid-template-columns: 1fr; }
+}
+
+.dashList {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.convoItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  padding: 10px;
+}
+.convoMain {
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.convoTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.convoTag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.16);
+  width: fit-content;
+}
+.convoTitle {
+  font-weight: 950;
+  font-size: 15px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.convoMeta {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.convoActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.iconSquare {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.iconSquare:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.18);
+}
+.iconSquare:active { transform: scale(0.98); }
+.iconSquare:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 520px) {
-  .container {
-    padding: 12px calc(12px + var(--safe-right))
-             12px calc(12px + var(--safe-left));
-  }
+  .dashTitle { font-size: 36px; }
+  .iconSquare { width: 42px; height: 42px; }
 }
+
 /* =========================
-   CHAT – CONTROLE REAL
+   Pricing / Planos (AI look)
 ========================= */
+.pricingWrap{
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px calc(16px + var(--safe-right)) 16px calc(16px + var(--safe-left));
+}
+.pricingHeader{
+  margin-top: 6px;
+  margin-bottom: 14px;
+  display: grid;
+  gap: 10px;
+}
+.pricingTitle{
+  font-size: 42px;
+  font-weight: 950;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+}
+@media (max-width: 520px){
+  .pricingTitle{ font-size: 34px; }
+}
+.pricingSub{
+  font-size: 15px;
+  color: rgba(229,231,235,0.72);
+  max-width: 62ch;
+}
+.planStatusPill{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  width: fit-content;
+}
+.planStatusPill b{ color: var(--text); }
 
-.chatFull {
-  display: flex;
-  flex-direction: column;
+.pricingGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 900px){
+  .pricingGrid{ grid-template-columns: 1fr; }
+}
+.planCard{
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+  box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+.planCard::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(720px 260px at 16% 6%, rgba(16,163,127,0.18), transparent 60%),
+    radial-gradient(520px 240px at 88% 18%, rgba(59,130,246,0.12), transparent 55%);
+  filter: blur(12px);
+  opacity: 0.95;
+  pointer-events:none;
+}
+.planCardInner{
+  position: relative;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.planTopRow{
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items:flex-start;
+}
+.planName{
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -0.2px;
+}
+.planPrice{ display: grid; gap: 4px; }
+.planPriceMain{ font-size: 22px; font-weight: 950; }
+.planPriceSub{ font-size: 12px; color: rgba(229,231,235,0.7); }
 
-  height: 100dvh;
-  max-height: 100dvh;
-
-  overflow: hidden; /* 🔒 trava TUDO aqui */
+.planBadge{
+  position:absolute;
+  top: 14px;
+  right: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid rgba(16,163,127,0.30);
+  background: rgba(16,163,127,0.14);
+  color: rgba(255,255,255,0.92);
 }
 
-/* área que ROLA */
-.chatMessagesFull {
-  flex: 1 1 auto;
-  min-height: 0;
-
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  padding: 14px;
-  padding-bottom: calc(16px + 72px + var(--safe-bottom));
+.planList{
+  display:grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-
-/* input fixo no rodapé do chat */
-.composer {
+.planItem{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+  color: rgba(229,231,235,0.86);
+  line-height: 1.35;
+}
+.planIcon{
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.20);
+  display:grid;
+  place-items:center;
   flex: 0 0 auto;
+  margin-top: 1px;
+}
 
-  position: relative; /* 🔑 NÃO sticky */
-  bottom: 0;
+.planCtaRow{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items:center;
+  justify-content: space-between;
+}
+.planBtn{
+  border: 0;
+  cursor: pointer;
+  font-weight: 950;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  box-shadow: 0 14px 40px rgba(16,163,127,0.18);
+  min-width: 140px;
+  text-align:center;
+}
+.planBtn:hover{ filter: brightness(1.05); }
+.planBtn:disabled{ opacity: 0.6; cursor: not-allowed; }
 
-  padding: 12px 14px calc(14px + var(--safe-bottom));
+.planGhostBtn{
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  padding: 12px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 900;
+}
+.planGhostBtn:hover{ background: rgba(255,255,255,0.10); }
+
+.planHint{
+  font-size: 12px;
+  color: rgba(229,231,235,0.68);
+}
+.planFooterNote{
+  margin-top: 14px;
+  font-size: 12px;
+  color: rgba(229,231,235,0.62);
   border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 12px;
+}
 
-  background: rgba(7,10,15,0.96);
+/* =========================================================
+   PREMIUM UPGRADE (IA feel)
+   ========================================================= */
+
+:root{
+  --glow: rgba(16,163,127,0.22);
+  --glow2: rgba(59,130,246,0.14);
+  --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.10);
+  --stroke: rgba(255,255,255,0.10);
+}
+
+.btn{
+  border-color: rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.btn:hover{
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+  box-shadow:
+    0 14px 34px rgba(0,0,0,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn:active{ transform: scale(0.975); }
+
+.btnPrimary{
+  background: linear-gradient(135deg, #10a37f 0%, #1ecfa3 45%, #0b8a6b 100%);
+  box-shadow:
+    0 14px 40px rgba(16,163,127,0.34),
+    0 0 0 1px rgba(16,163,127,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.btnPrimary:hover{
+  filter: brightness(1.08);
+  box-shadow:
+    0 18px 54px rgba(16,163,127,0.42),
+    0 0 0 1px rgba(16,163,127,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.34);
+}
+
+.chatMiniBar{
+  background:
+    radial-gradient(520px 220px at 20% 0%, rgba(16,163,127,0.16), transparent 60%),
+    radial-gradient(520px 220px at 90% 0%, rgba(59,130,246,0.12), transparent 60%),
+    rgba(0,0,0,0.12);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+.miniIconBtn{
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+  border-color: rgba(255,255,255,0.14);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.miniIconBtn:hover{
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+}
+.miniIconBtn:active{ transform: scale(0.97); }
+
+.composer{
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.composerInner{
+  background:
+    radial-gradient(520px 220px at 18% 0%, rgba(16,163,127,0.10), transparent 60%),
+    rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.32),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.composerInner:focus-within{
+  border-color: rgba(16,163,127,0.42);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.34),
+    0 0 0 4px rgba(16,163,127,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.iconBtn{
+  background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.10));
+  border-color: rgba(255,255,255,0.12);
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.iconBtn:hover{ background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
+
+.chatBubble{
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+}
+.chatAssistant{
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+}
+.chatUser{
+  background: linear-gradient(180deg, rgba(16,163,127,0.22), rgba(16,163,127,0.12));
+}
+
+.fileChip{
+  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.05));
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+@media (hover: none) {
+  .btn:hover,
+  .miniIconBtn:hover,
+  .iconBtn:hover { filter: none; }
 }
