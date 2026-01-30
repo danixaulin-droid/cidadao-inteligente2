@@ -14,19 +14,20 @@ export default function AssistenteChatClientPage() {
   return (
     <main
       style={{
-        minHeight: "calc(100vh - 72px)", // respeita o Header global do app
+        height: "100dvh",
         padding: 0,
         display: "flex",
         justifyContent: "center",
+        overflow: "hidden",
       }}
     >
-      {/* Chat ocupa tudo, sem card, sem título */}
       <div
         style={{
           width: "100%",
           maxWidth: 980,
           display: "flex",
           flexDirection: "column",
+          height: "100%",
         }}
       >
         <ChatBox
