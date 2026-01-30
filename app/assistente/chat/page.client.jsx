@@ -11,20 +11,46 @@ export default function AssistenteChatClientPage() {
 
   const context = `Tema: ${topic}`;
 
+  const title = `Chat • ${topic.charAt(0).toUpperCase() + topic.slice(1)}`;
+
   return (
-    <main className="container">
-      <div className="card" style={{ maxWidth: 980, margin: "0 auto" }}>
-        <h1 style={{ marginTop: 0 }}>
-          Chat • {topic.charAt(0).toUpperCase() + topic.slice(1)}
-        </h1>
+    <main
+      className="container"
+      style={{
+        minHeight: "calc(100dvh - 72px)", // respeita Header sticky
+        display: "flex",
+        flexDirection: "column",
+        paddingTop: 12,
+        paddingBottom: 12,
+      }}
+    >
+      {/* Shell do chat em tela cheia (sem "card pequeno") */}
+      <section
+        className="chatShell"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0, // IMPORTANTE pro scroll interno funcionar
+        }}
+      >
+        {/* Header do chat */}
+        <div className="chatHeaderRow">
+          <div style={{ minWidth: 0 }}>
+            <div className="chatTitle" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {title}
+            </div>
+            <div className="chatMeta">
+              Envie sua dúvida e, se quiser, anexe PDF ou imagem para eu analisar.
+            </div>
+          </div>
+        </div>
 
-        <p className="muted" style={{ marginTop: 8 }}>
-          Envie sua dúvida e, se quiser, anexe PDF ou imagem para eu analisar.
-        </p>
-
-        {/* ✅ passa a sessão correta */}
-        <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
-      </div>
+        {/* ChatBox ocupa o resto da altura */}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
+        </div>
+      </section>
     </main>
   );
 }
