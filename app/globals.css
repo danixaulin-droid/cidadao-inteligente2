@@ -650,3 +650,128 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   border-top: 1px solid rgba(255,255,255,0.08);
   padding-top: 12px;
 }
+/* =========================================================
+   PREMIUM UPGRADE (IA feel)
+   - Não quebra layout atual
+   - Só melhora visual e micro-interações
+   ========================================================= */
+
+:root{
+  --glow: rgba(16,163,127,0.22);
+  --glow2: rgba(59,130,246,0.14);
+  --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.10);
+  --stroke: rgba(255,255,255,0.10);
+}
+
+/* Botões: mais “premium” */
+.btn{
+  border-color: rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.btn:hover{
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+  box-shadow:
+    0 14px 34px rgba(0,0,0,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn:active{ transform: scale(0.975); }
+
+/* CTA: Enviar / botões primários com brilho */
+.btnPrimary{
+  background: linear-gradient(135deg, #10a37f 0%, #1ecfa3 45%, #0b8a6b 100%);
+  box-shadow:
+    0 14px 40px rgba(16,163,127,0.34),
+    0 0 0 1px rgba(16,163,127,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.btnPrimary:hover{
+  filter: brightness(1.08);
+  box-shadow:
+    0 18px 54px rgba(16,163,127,0.42),
+    0 0 0 1px rgba(16,163,127,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.34);
+}
+
+/* Barra do chat (topo): glass + glow leve */
+.chatMiniBar{
+  background:
+    radial-gradient(520px 220px at 20% 0%, rgba(16,163,127,0.16), transparent 60%),
+    radial-gradient(520px 220px at 90% 0%, rgba(59,130,246,0.12), transparent 60%),
+    rgba(0,0,0,0.12);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+/* Botões do topo: mais premium */
+.miniIconBtn{
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+  border-color: rgba(255,255,255,0.14);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.miniIconBtn:hover{
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+}
+.miniIconBtn:active{ transform: scale(0.97); }
+
+/* Composer: foco com glow (cara de IA) */
+.composer{
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.composerInner{
+  background:
+    radial-gradient(520px 220px at 18% 0%, rgba(16,163,127,0.10), transparent 60%),
+    rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.32),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.composerInner:focus-within{
+  border-color: rgba(16,163,127,0.42);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.34),
+    0 0 0 4px rgba(16,163,127,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+/* Botão de anexo: glass */
+.iconBtn{
+  background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.10));
+  border-color: rgba(255,255,255,0.12);
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.iconBtn:hover{ background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
+
+/* Mensagens: mais “soft”, com leve profundidade */
+.chatBubble{
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+}
+.chatAssistant{
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+}
+.chatUser{
+  background: linear-gradient(180deg, rgba(16,163,127,0.22), rgba(16,163,127,0.12));
+}
+
+/* Chip do arquivo: premium pill */
+.fileChip{
+  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.05));
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+/* Melhor “toque” no mobile */
+@media (hover: none) {
+  .btn:hover,
+  .miniIconBtn:hover,
+  .iconBtn:hover { filter: none; }
+}
