@@ -12,28 +12,31 @@ export default function AssistenteChatClientPage() {
   const context = `Tema: ${topic}`;
 
   return (
-    <div
+    <main
       style={{
-        height: "100%",
-        width: "100%",
+        height: "100dvh",
+        minHeight: "100dvh",
         padding: 0,
         display: "flex",
         justifyContent: "center",
+        alignItems: "stretch",
         overflow: "hidden",
       }}
     >
+      {/* ✅ este wrapper GARANTE o "centralizado" sempre */}
       <div
         style={{
           width: "100%",
           maxWidth: 980,
-          display: "flex",
-          flexDirection: "column",
           height: "100%",
           minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          margin: "0 auto",
         }}
       >
         <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
       </div>
-    </div>
+    </main>
   );
 }
