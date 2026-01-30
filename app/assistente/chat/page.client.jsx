@@ -16,14 +16,17 @@ export default function AssistenteChatClientPage() {
       style={{
         height: "100dvh",
         minHeight: "100dvh",
-        padding: 0,
+        width: "100%",
         display: "flex",
         justifyContent: "center",
         alignItems: "stretch",
         overflow: "hidden",
+
+        // ✅ isso resolve o “não centraliza” no app instalado (safe-area)
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
       }}
     >
-      {/* ✅ este wrapper GARANTE o "centralizado" sempre */}
       <div
         style={{
           width: "100%",
