@@ -24,22 +24,22 @@ export default function RootLayout({ children }) {
       </head>
 
       <body style={{ margin: 0, minHeight: "100dvh" }}>
-        {/* ✅ Header some apenas no /chat */}
-        <HideOnRoutes hidePrefixes={["/chat"]}>
+        {/* ✅ Header some só no /assistente/chat */}
+        <HideOnRoutes hidePrefixes={["/assistente/chat"]}>
           <Header />
         </HideOnRoutes>
 
-        {/* ✅ Main ajusta altura automaticamente:
-            - normal: desconta header
-            - chat: ocupa 100dvh sem buraco */}
+        {/* ✅ Conteúdo:
+            - normal: desconta header (72px)
+            - chat: ocupa tela inteira e trava overflow */}
         <HideOnRoutes
           hidePrefixes={[]}
-          render={(isHidden) => (
+          render={(isChat) => (
             <main
               style={{
-                minHeight: isHidden ? "100dvh" : "calc(100dvh - 72px)",
-                height: isHidden ? "100dvh" : "auto",
-                overflow: isHidden ? "hidden" : "visible",
+                minHeight: isChat ? "100dvh" : "calc(100dvh - 72px)",
+                height: isChat ? "100dvh" : "auto",
+                overflow: isChat ? "hidden" : "visible",
               }}
             >
               {children}
@@ -49,8 +49,8 @@ export default function RootLayout({ children }) {
 
         <PWARegister />
 
-        {/* ✅ Footer some apenas no /chat */}
-        <HideOnRoutes hidePrefixes={["/chat"]}>
+        {/* ✅ Footer some só no /assistente/chat */}
+        <HideOnRoutes hidePrefixes={["/assistente/chat"]}>
           <footer
             style={{
               padding: 16,
