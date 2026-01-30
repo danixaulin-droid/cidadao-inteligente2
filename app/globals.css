@@ -330,7 +330,71 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 @media (max-width: 860px) {
   .dashFilters { grid-template-columns: 1fr; }
 }
+/* =========================
+   CHAT FULL (mobile-first)
+========================= */
 
+.chatFull{
+  height: calc(100vh - 72px); /* respeita o header do app */
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+
+/* Barra mínima com ícones */
+.chatMiniBar{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.miniBarSpacer{ flex: 1; }
+
+.miniIconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  cursor: pointer;
+  display:grid;
+  place-items:center;
+  font-size: 18px;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.miniIconBtn:hover{
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.18);
+}
+.miniIconBtn:active{ transform: scale(0.98); }
+.miniIconBtn:disabled{ opacity: 0.55; cursor: not-allowed; }
+
+/* Mensagens ocupando a tela toda */
+.chatMessagesFull{
+  flex: 1;
+  min-height: 0;
+  max-height: none !important; /* mata qualquer 62vh antigo */
+  padding-bottom: 10px;
+}
+
+/* Composer fixo embaixo (igual app) */
+.composerFixed{
+  position: sticky;
+  bottom: 0;
+}
+
+/* Mobile: ocupa mais e evita “respiro” exagerado */
+@media (max-width: 520px){
+  .chatFull{
+    height: calc(100vh - 64px);
+  }
+}
 .dashList {
   margin-top: 12px;
   display: grid;
