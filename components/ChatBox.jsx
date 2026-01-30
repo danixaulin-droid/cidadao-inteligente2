@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 const BUCKET_DEFAULT = "uploads";
@@ -20,7 +21,13 @@ function isAllowedFile(name = "") {
 function getFileType(name = "") {
   const n = name.toLowerCase();
   if (n.endsWith(".pdf")) return "pdf";
-  if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".webp") || n.endsWith(".heic"))
+  if (
+    n.endsWith(".png") ||
+    n.endsWith(".jpg") ||
+    n.endsWith(".jpeg") ||
+    n.endsWith(".webp") ||
+    n.endsWith(".heic")
+  )
     return "image";
   return "unknown";
 }
@@ -54,6 +61,8 @@ export default function ChatBox({
   bucket = BUCKET_DEFAULT,
   sessionFromUrl = "",
 }) {
+  const router = useRouter();
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -322,13 +331,40 @@ export default function ChatBox({
 
   return (
     <section className="chatFull">
-      {/* Toolbar mínima (sem título) */}
+      {/* Barra mínima com ícones (sem título gigante) */}
       <div className="chatMiniBar">
-        <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={historyLoading || loading}>
-          {historyLoading ? "Carregando..." : "Recarregar"}
+        <button
+          type="button"
+          className="miniIconBtn"
+          onClick={() => router.push("/dashboard")}
+          title="Voltar para o Dashboard"
+          aria-label="Voltar para o Dashboard"
+        >
+          ⬅️
         </button>
-        <button className="btn" onClick={newConversation} disabled={loading || historyLoading}>
-          Nova
+
+        <div className="miniBarSpacer" />
+
+        <button
+          type="button"
+          className="miniIconBtn"
+          onClick={() => loadHistory({ reset: true })}
+          disabled={historyLoading || loading}
+          title="Recarregar"
+          aria-label="Recarregar"
+        >
+          {historyLoading ? "⏳" : "🔄"}
+        </button>
+
+        <button
+          type="button"
+          className="miniIconBtn"
+          onClick={newConversation}
+          disabled={loading || historyLoading}
+          title="Nova conversa"
+          aria-label="Nova conversa"
+        >
+          🆕
         </button>
       </div>
 
@@ -387,6 +423,7 @@ export default function ChatBox({
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading || loading}
                 title="Anexar arquivo"
+                aria-label="Anexar arquivo"
               >
                 📎
               </button>
