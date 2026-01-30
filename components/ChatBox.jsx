@@ -329,17 +329,20 @@ export default function ChatBox({
     }
   }
 
+  const canSend = !loading && input.trim().length > 0;
+
   return (
     <section className="chatFull">
+      {/* Top bar premium */}
       <div className="chatMiniBar">
         <button
           type="button"
           className="miniIconBtn"
           onClick={() => router.push("/dashboard")}
-          title="Voltar para o Dashboard"
-          aria-label="Voltar para o Dashboard"
+          title="Voltar"
+          aria-label="Voltar"
         >
-          ⬅️
+          ←
         </button>
 
         <div className="miniBarSpacer" />
@@ -352,18 +355,18 @@ export default function ChatBox({
           title="Recarregar"
           aria-label="Recarregar"
         >
-          {historyLoading ? "⏳" : "🔄"}
+          {historyLoading ? "…" : "↻"}
         </button>
 
         <button
           type="button"
-          className="miniIconBtn"
+          className="miniIconBtn miniIconBtnNew"
           onClick={newConversation}
           disabled={loading || historyLoading}
           title="Nova conversa"
           aria-label="Nova conversa"
         >
-          🆕
+          ＋
         </button>
       </div>
 
@@ -401,10 +404,11 @@ export default function ChatBox({
         {enableUpload && (attached?.displayName || uploading) && (
           <div className="fileChipRow">
             {uploading ? (
-              <div className="fileChip">📎 Enviando arquivo…</div>
+              <div className="fileChip">Anexando arquivo…</div>
             ) : (
               <div className="fileChip">
-                📎 <span>{attached.displayName}</span>
+                <span className="fileChipIcon">⎘</span>
+                <span className="fileChipName">{attached.displayName}</span>
                 <button type="button" onClick={() => setAttached(null)} disabled={loading} aria-label="Remover anexo">
                   ✕
                 </button>
@@ -421,10 +425,10 @@ export default function ChatBox({
                 className="iconBtn"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading || loading}
-                title="Anexar arquivo"
-                aria-label="Anexar arquivo"
+                title="Anexar"
+                aria-label="Anexar"
               >
-                📎
+                ⌁
               </button>
 
               <input
@@ -453,7 +457,7 @@ export default function ChatBox({
           />
 
           <div className="composerActions">
-            <button className="btn btnPrimary" onClick={send} disabled={loading || !input.trim()}>
+            <button className="btn btnPrimary sendBtn" onClick={send} disabled={!canSend}>
               {loading ? "..." : "Enviar"}
             </button>
           </div>
