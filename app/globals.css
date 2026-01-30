@@ -28,18 +28,26 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+
+  --glow: rgba(16,163,127,0.22);
+  --glow2: rgba(59,130,246,0.14);
+  --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.10);
+  --stroke: rgba(255,255,255,0.10);
 }
 
 * { box-sizing: border-box; }
 
-/* ✅ ESSENCIAL: PWA sem “buraco” (trava altura real e remove scroll do body) */
+/* ✅ BASE: HOME / DASHBOARD / PLANOS PODEM ROLAR */
 html, body {
-  height: 100%;
+  height: auto;
   min-height: 100%;
   margin: 0;
   padding: 0;
+
   overflow-x: hidden;
-  overflow-y: hidden; /* ✅ evita scroll fantasma no PWA */
+  overflow-y: auto; /* ✅ AGORA A HOME ROLA */
+
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background:
@@ -48,20 +56,21 @@ html, body {
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
-/* melhora scroll no mobile (só dentro do chat) */
+/* melhora scroll no mobile (só dentro do chat e páginas longas) */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* ✅ prioridade: 100svh (PWA/standalone) */
+/* ✅ prioridade: 100svh (PWA/standalone) — sem travar scroll */
 @supports (height: 100svh) {
-  html, body { height: 100svh; min-height: 100svh; }
+  html, body { min-height: 100svh; }
 }
 
 /* fallback */
 @supports not (height: 100svh) and (height: 100dvh) {
-  html, body { height: 100dvh; min-height: 100dvh; }
+  html, body { min-height: 100dvh; }
 }
 
 a { color: inherit; text-decoration: none; }
@@ -299,7 +308,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 /* =========================
    CHAT FULL (SEM HEADER)
-   ✅ FIX CENTRALIZAÇÃO + FIX “BURACO” PWA
+   (o chat trava o scroll só nele)
    ========================= */
 
 .chatFull{
@@ -315,14 +324,13 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   margin: 0 auto;
 
   overflow: hidden;
-  height: 100svh;     /* ✅ definitivo no PWA */
+  height: 100svh;
 }
 
 @supports not (height: 100svh) and (height: 100dvh) {
   .chatFull { height: 100dvh; }
 }
 
-/* barra mínima com ícones */
 .chatMiniBar{
   flex: 0 0 auto;
   display:flex;
@@ -330,7 +338,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   gap: 10px;
   padding: 10px 12px;
 
-  /* ✅ safe-area left/right */
   padding-left: calc(12px + var(--safe-left));
   padding-right: calc(12px + var(--safe-right));
 
@@ -362,7 +369,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .miniIconBtn:active{ transform: scale(0.98); }
 .miniIconBtn:disabled{ opacity: 0.55; cursor: not-allowed; }
 
-/* mensagens em full */
 .chatMessagesFull{
   flex: 1;
   min-height: 0;
@@ -371,11 +377,9 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  /* ✅ aqui é o fix do “buraco”: NÃO usar 96px fixo */
   padding-bottom: calc(16px + 84px + var(--safe-bottom));
 }
 
-/* força composer ficar no rodapé */
 .composerFixed{
   position: sticky;
   bottom: 0;
@@ -687,14 +691,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 /* =========================================================
    PREMIUM UPGRADE (IA feel)
    ========================================================= */
-
-:root{
-  --glow: rgba(16,163,127,0.22);
-  --glow2: rgba(59,130,246,0.14);
-  --glass: rgba(255,255,255,0.06);
-  --glass2: rgba(255,255,255,0.10);
-  --stroke: rgba(255,255,255,0.10);
-}
 
 .btn{
   border-color: rgba(255,255,255,0.14);
