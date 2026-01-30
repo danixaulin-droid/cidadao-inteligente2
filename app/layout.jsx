@@ -2,6 +2,7 @@ import "./globals.css";
 import PWARegister from "../components/PWARegister";
 import Header from "./components/Header";
 import HideOnRoutes from "../components/HideOnRoutes";
+import Footer from "../components/Footer";
 
 export const metadata = {
   title: "Cidadão Inteligente",
@@ -24,16 +25,14 @@ export default function RootLayout({ children }) {
       </head>
 
       <body style={{ margin: 0, minHeight: "100dvh" }}>
-        {/* ✅ Header some só no /assistente/chat */}
-        <HideOnRoutes hidePrefixes={["/assistente/chat"]}>
+        {/* Header não aparece no chat */}
+        <HideOnRoutes hidePrefixes={["/chat", "/assistente/chat"]}>
           <Header />
         </HideOnRoutes>
 
-        {/* ✅ Conteúdo:
-            - normal: desconta header (72px)
-            - chat: ocupa tela inteira e trava overflow */}
+        {/* Main controla altura corretamente */}
         <HideOnRoutes
-          hidePrefixes={[]}
+          hidePrefixes={["/chat", "/assistente/chat"]}
           render={(isChat) => (
             <main
               style={{
@@ -49,20 +48,8 @@ export default function RootLayout({ children }) {
 
         <PWARegister />
 
-        {/* ✅ Footer some só no /assistente/chat */}
-        <HideOnRoutes hidePrefixes={["/assistente/chat"]}>
-          <footer
-            style={{
-              padding: 16,
-              borderTop: "1px solid rgba(255,255,255,0.10)",
-              marginTop: 24,
-            }}
-          >
-            <div className="container">
-              <small>© {new Date().getFullYear()} Cidadão Inteligente</small>
-            </div>
-          </footer>
-        </HideOnRoutes>
+        {/* Footer único do app */}
+        <Footer />
       </body>
     </html>
   );
