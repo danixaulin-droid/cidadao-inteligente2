@@ -17,6 +17,12 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // ✅ ESCONDER HEADER APENAS NO CHAT
+  // cobre /assistente/chat e qualquer subrota tipo /assistente/chat?topic=...
+  if (pathname?.startsWith("/assistente/chat")) {
+    return null;
+  }
+
   const [userEmail, setUserEmail] = useState("");
   const [open, setOpen] = useState(false);
 
