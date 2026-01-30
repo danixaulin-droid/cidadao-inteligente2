@@ -20,13 +20,7 @@ function isAllowedFile(name = "") {
 function getFileType(name = "") {
   const n = name.toLowerCase();
   if (n.endsWith(".pdf")) return "pdf";
-  if (
-    n.endsWith(".png") ||
-    n.endsWith(".jpg") ||
-    n.endsWith(".jpeg") ||
-    n.endsWith(".webp") ||
-    n.endsWith(".heic")
-  )
+  if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".webp") || n.endsWith(".heic"))
     return "image";
   return "unknown";
 }
@@ -85,8 +79,6 @@ export default function ChatBox({
   const taRef = useRef(null);
 
   function scrollToBottom(force = false) {
-    // Se quiser melhorar depois: só auto-scroll quando o user estiver perto do fim.
-    // Por enquanto, mantém comportamento simples.
     if (force) endRef.current?.scrollIntoView({ behavior: "auto" });
     else endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
@@ -329,26 +321,9 @@ export default function ChatBox({
   }
 
   return (
-    // ✅ Agora o ChatBox é só "corpo" (mensagens + composer), sem duplicar shell/header
-    <section
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 0, // essencial pro scroll interno
-      }}
-    >
-      {/* Mini toolbar (discreta) */}
-      <div
-        style={{
-          padding: 10,
-          display: "flex",
-          gap: 10,
-          justifyContent: "flex-end",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          background: "rgba(0,0,0,0.10)",
-        }}
-      >
+    <section className="chatFull">
+      {/* Toolbar mínima (sem título) */}
+      <div className="chatMiniBar">
         <button className="btn" onClick={() => loadHistory({ reset: true })} disabled={historyLoading || loading}>
           {historyLoading ? "Carregando..." : "Recarregar"}
         </button>
@@ -357,16 +332,7 @@ export default function ChatBox({
         </button>
       </div>
 
-      {/* ✅ Mensagens ocupam a área toda */}
-      <div
-        className="chatMessages"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          maxHeight: "none", // mata o 62vh do CSS no mobile
-          paddingBottom: 10,
-        }}
-      >
+      <div className="chatMessages chatMessagesFull">
         {errText ? (
           <div className="muted" style={{ fontSize: 14 }}>
             {errText}
@@ -396,8 +362,7 @@ export default function ChatBox({
         <div ref={endRef} />
       </div>
 
-      {/* ✅ Composer já é sticky e agora funciona como "barra fixa" */}
-      <div className="composer">
+      <div className="composer composerFixed">
         {enableUpload && (attached?.displayName || uploading) && (
           <div className="fileChipRow">
             {uploading ? (
@@ -456,10 +421,6 @@ export default function ChatBox({
               {loading ? "..." : "Enviar"}
             </button>
           </div>
-        </div>
-
-        <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-          Dica: anexe PDF/imagem e peça: “resuma”, “o que falta”, “próximos passos”.
         </div>
       </div>
     </section>
