@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 export default function LayoutChrome({ children }) {
   const pathname = usePathname() || "";
 
+  // Detecta qualquer rota de chat
   const isChat =
     pathname.startsWith("/chat") ||
     pathname.startsWith("/assistente/chat") ||
@@ -14,23 +15,28 @@ export default function LayoutChrome({ children }) {
 
   return (
     <>
+      {/* Header só fora do chat */}
       {!isChat && <Header />}
 
       <main
         style={{
-          minHeight: "100dvh",
+          // Home e páginas normais crescem
+          minHeight: isChat ? "100dvh" : "auto",
+
+          // Chat ocupa a viewport inteira
           height: isChat ? "100dvh" : "auto",
 
-          /* 🔑 AQUI ESTÁ A CORREÇÃO */
+          // 🔑 REGRA DE OURO
           overflowY: isChat ? "hidden" : "auto",
           overflowX: "hidden",
 
-          WebkitOverflowScrolling: "touch", // iOS / PWA
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {children}
       </main>
 
+      {/* Footer só fora do chat */}
       {!isChat && <Footer />}
     </>
   );
