@@ -1,6 +1,7 @@
 import "./globals.css";
 import PWARegister from "../components/PWARegister";
 import LayoutChrome from "../components/LayoutChrome";
+import ViewportHeightFix from "../components/ViewportHeightFix";
 
 export const metadata = {
   title: "Cidadão Inteligente",
@@ -26,7 +27,9 @@ export default function RootLayout({ children }) {
         />
       </head>
 
-      <body style={{ margin: 0, minHeight: "100dvh" }}>
+      {/* 🔧 Importante: height/minHeight usando variável do app (PWA) */}
+      <body style={{ margin: 0, minHeight: "var(--app-h, 100dvh)" }}>
+        <ViewportHeightFix />
         <LayoutChrome>{children}</LayoutChrome>
         <PWARegister />
       </body>
