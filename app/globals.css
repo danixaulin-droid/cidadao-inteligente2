@@ -29,7 +29,9 @@
 
 * { box-sizing: border-box; }
 
+/* ✅ ESSENCIAL: altura real 100% (evita espaço embaixo) */
 html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -47,7 +49,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* evita que o teclado mobile “exploda” layout */
+/* ✅ importante: evita “pulo” por causa do teclado e barra do navegador */
 @supports (height: 100dvh) {
   body { min-height: 100dvh; }
 }
@@ -123,8 +125,6 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 
 /* =========================================================
    CHAT UI (ChatBox)
-   - Mantém .chatShell se você usar em alguma página
-   - E adiciona modo FULL (chatFull) para tela cheia no mobile
    ========================================================= */
 
 .chatShell {
@@ -281,11 +281,12 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 .fileChip button:hover { color: var(--text); }
 
 /* =========================
-   CHAT FULL (para a tela do chat sem header do chat)
+   CHAT FULL (SEM HEADER)
+   ✅ AQUI ESTAVA O BURACO: removi "-72px"
    ========================= */
 
 .chatFull{
-  height: calc(100vh - 72px); /* respeita header do app */
+  height: 100%;
   display:flex;
   flex-direction:column;
   min-height:0;
@@ -295,11 +296,12 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
 }
 
 @supports (height: 100dvh) {
-  .chatFull { height: calc(100dvh - 72px); }
+  .chatFull { height: 100dvh; }
 }
 
 /* barra mínima com ícones */
 .chatMiniBar{
+  flex: 0 0 auto;
   display:flex;
   align-items:center;
   gap: 10px;
@@ -340,7 +342,7 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   padding-bottom: calc(10px + var(--safe-bottom));
 }
 
-/* força composer ficar “fixo” no rodapé */
+/* força composer ficar no rodapé */
 .composerFixed{
   position: sticky;
   bottom: 0;
