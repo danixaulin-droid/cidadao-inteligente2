@@ -12,9 +12,10 @@ export default function AssistenteChatClientPage() {
   const context = `Tema: ${topic}`;
 
   return (
-    <main
+    <div
       style={{
-        height: "100dvh",
+        height: "100%",
+        width: "100%",
         padding: 0,
         display: "flex",
         justifyContent: "center",
@@ -28,14 +29,11 @@ export default function AssistenteChatClientPage() {
           display: "flex",
           flexDirection: "column",
           height: "100%",
+          minHeight: 0,
         }}
       >
-        <ChatBox
-          context={context}
-          enableUpload
-          sessionFromUrl={sessionFromUrl}
-        />
+        <ChatBox context={context} enableUpload sessionFromUrl={sessionFromUrl} />
       </div>
-    </main>
+    </div>
   );
 }
