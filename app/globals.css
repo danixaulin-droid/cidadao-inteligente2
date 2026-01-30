@@ -796,3 +796,18 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.10); }
   .miniIconBtn:hover,
   .iconBtn:hover { filter: none; }
 }
+/* ✅ FIX PWA/MOBILE: evita “buraco” embaixo por causa do 100vh/100dvh */
+@supports (height: 100svh) {
+  html, body { min-height: 100svh; }
+  .chatFull { height: 100svh !important; }
+}
+
+/* fallback (quando 100svh não existe) */
+@supports not (height: 100svh) {
+  .chatFull { height: 100dvh !important; }
+}
+
+/* garante que a área das mensagens sempre “encoste” no composer */
+.chatMessagesFull{
+  padding-bottom: calc(16px + 96px + var(--safe-bottom)) !important; /* 96px ~ altura do composer */
+}
