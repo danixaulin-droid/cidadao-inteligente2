@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 const PLANS = [
   {
@@ -36,22 +37,51 @@ async function safeJson(res) {
 }
 
 export default function PlanosPage() {
+  const router = useRouter();
+  const pathname = usePathname() || "/planos";
+
   const [plan, setPlan] = useState("free");
   const [status, setStatus] = useState("none");
   const [loading, setLoading] = useState(true);
 
   const [busyPlan, setBusyPlan] = useState(""); // basic|pro
   const [msg, setMsg] = useState("");
+  const [authRequired, setAuthRequired] = useState(false);
 
   const planLabel = useMemo(() => (plan || "free").toLowerCase(), [plan]);
   const statusLabel = useMemo(() => (status || "none").toLowerCase(), [status]);
 
+  function goLogin() {
+    // volta para /planos depois do login
+    router.push(`/login?next=${encodeURIComponent(pathname || "/planos")}`);
+  }
+
   async function loadStatus() {
     setMsg("");
     setLoading(true);
+    setAuthRequired(false);
+
     try {
       const res = await fetch("/api/billing/status", { cache: "no-store" });
       const data = await safeJson(res);
+
+      // ✅ NÃO LOGADO → direciona para login (sem “falha ao ler usuário”)
+      if (res.status === 401 || res.status === 403) {
+        setAuthRequired(true);
+        setPlan("free");
+        setStatus("none");
+        setMsg("Entre na sua conta para ver seu plano e assinar.");
+        return;
+      }
+
+      if (!res.ok) {
+        const errMsg =
+          data?.error ||
+          data?.message ||
+          (data?.__invalid ? "Resposta inválida do servidor." : null) ||
+          "Falha ao carregar status do plano.";
+        throw new Error(errMsg);
+      }
 
       // mesmo se vier vazio, não quebra
       setPlan((data?.plan || "free").toLowerCase());
@@ -67,6 +97,7 @@ export default function PlanosPage() {
 
   useEffect(() => {
     loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function subscribe(pickedPlan) {
@@ -82,6 +113,14 @@ export default function PlanosPage() {
 
       const data = await safeJson(res);
 
+      // ✅ NÃO LOGADO → vai pro login
+      if (res.status === 401 || res.status === 403) {
+        setAuthRequired(true);
+        setMsg("Você precisa entrar na sua conta para assinar.");
+        goLogin();
+        return;
+      }
+
       if (!res.ok) {
         const errMsg =
           data?.error ||
@@ -94,7 +133,7 @@ export default function PlanosPage() {
       const url = data?.init_point || data?.sandbox_init_point;
       if (!url) throw new Error("Não recebi o link de pagamento do Mercado Pago.");
 
-      // redireciona para o MP
+      // ✅ redireciona para o MP
       window.location.href = url;
     } catch (e) {
       setMsg(e?.message || "Erro ao iniciar pagamento.");
@@ -114,6 +153,7 @@ export default function PlanosPage() {
         borderRadius: 16,
         border: "1px solid rgba(255,255,255,0.10)",
         background: "rgba(0,0,0,0.18)",
+        flexWrap: "wrap",
       }}
     >
       <div style={{ minWidth: 0 }}>
@@ -124,15 +164,27 @@ export default function PlanosPage() {
         </div>
       </div>
 
-      <button
-        className="btn"
-        onClick={loadStatus}
-        disabled={loading}
-        title="Atualizar"
-        style={{ borderRadius: 14, padding: "10px 12px", minWidth: 44 }}
-      >
-        {loading ? "…" : "↻"}
-      </button>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        {authRequired ? (
+          <button
+            className="btn btnPrimary"
+            onClick={goLogin}
+            style={{ borderRadius: 14, padding: "10px 14px", fontWeight: 950 }}
+          >
+            Entrar
+          </button>
+        ) : null}
+
+        <button
+          className="btn"
+          onClick={loadStatus}
+          disabled={loading}
+          title="Atualizar"
+          style={{ borderRadius: 14, padding: "10px 12px", minWidth: 44 }}
+        >
+          {loading ? "…" : "↻"}
+        </button>
+      </div>
     </div>
   );
 
@@ -150,7 +202,10 @@ export default function PlanosPage() {
         <div style={{ display: "grid", gap: 14 }}>
           <div style={{ display: "grid", gap: 8 }}>
             <h1 style={{ margin: 0, fontSize: 36, letterSpacing: -0.7 }}>Planos</h1>
-            <p className="muted" style={{ margin: 0, fontSize: 15, lineHeight: 1.55, maxWidth: 70 + "ch" }}>
+            <p
+              className="muted"
+              style={{ margin: 0, fontSize: 15, lineHeight: 1.55, maxWidth: "70ch" }}
+            >
               Desbloqueie upload de documentos, aumente seus limites e tenha uma experiência mais completa com a IA.
             </p>
           </div>
@@ -158,7 +213,15 @@ export default function PlanosPage() {
           {statusPill}
 
           {msg ? (
-            <div className="statusChip err" style={{ marginTop: 2 }}>
+            <div
+              style={{
+                marginTop: 2,
+                padding: "10px 12px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(0,0,0,0.18)",
+              }}
+            >
               ⚠️ {msg}
             </div>
           ) : null}
@@ -219,7 +282,7 @@ export default function PlanosPage() {
                       ) : null}
                     </div>
 
-                    {/* preço (isolado, sem sobreposição) */}
+                    {/* preço */}
                     <div style={{ display: "grid", gap: 2 }}>
                       <div style={{ fontSize: 22, fontWeight: 950 }}>{p.priceLabel}</div>
                       <div className="muted" style={{ fontSize: 12 }}>
@@ -266,32 +329,23 @@ export default function PlanosPage() {
                     }}
                   >
                     <button
-                      className="btn btnPrimary"
-                      onClick={() => subscribe(p.key)}
-                      disabled={isBusy}
+                      className={isCurrent ? "btn" : "btn btnPrimary"}
+                      onClick={() => (isCurrent ? null : subscribe(p.key))}
+                      disabled={isBusy || isCurrent}
                       style={{
                         padding: "12px 14px",
                         borderRadius: 16,
                         fontWeight: 950,
-                        minWidth: 160,
+                        minWidth: 180,
+                        opacity: isCurrent ? 0.85 : 1,
                       }}
                     >
-                      {isBusy ? "Abrindo…" : `Assinar ${p.name}`}
+                      {isCurrent ? "Plano atual" : isBusy ? "Abrindo…" : `Assinar ${p.name}`}
                     </button>
 
-                    <button
-                      className="btn"
-                      onClick={loadStatus}
-                      disabled={loading}
-                      style={{ padding: "12px 14px", borderRadius: 16, fontWeight: 900 }}
-                      title="Atualizar status do plano"
-                    >
-                      Ver status
-                    </button>
-                  </div>
-
-                  <div className="muted" style={{ padding: "10px 14px 14px", fontSize: 12, lineHeight: 1.5 }}>
-                    Cancelamento e gestão da assinatura pelo Mercado Pago a qualquer momento.
+                    <span className="muted" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                      Cancelamento pelo Mercado Pago
+                    </span>
                   </div>
                 </div>
               );
@@ -299,7 +353,7 @@ export default function PlanosPage() {
           </div>
 
           <div className="muted" style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
-            Dica: após pagar, toque em <b style={{ color: "var(--text)" }}>Ver status</b> para atualizar o plano.
+            Dica: após pagar, toque em <b style={{ color: "var(--text)" }}>↻</b> para atualizar o plano.
           </div>
         </div>
       </div>
