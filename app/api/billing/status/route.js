@@ -7,17 +7,43 @@ export async function GET() {
   try {
     const supabase = getSupabaseServer();
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr) {
-      return Response.json({ plan: "free", status: "none", error: userErr.message }, { status: 200 });
+    // 🔑 tenta pegar usuário (erro aqui NÃO é fatal)
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+
+    // 👤 visitante (não logado)
+    if (!user) {
+      return Response.json(
+        {
+          logged: false,
+          plan: "free",
+          status: "none",
+        },
+        { status: 200 }
+      );
     }
 
-    const user = userData?.user;
-    if (!user) return Response.json({ plan: "free", status: "none" }, { status: 200 });
+    // 👤 usuário logado → buscar plano
+    const result = await getActivePlan(supabase, user.id);
 
-    const { plan, status } = await getActivePlan(supabase, user.id);
-    return Response.json({ plan, status }, { status: 200 });
+    return Response.json(
+      {
+        logged: true,
+        plan: (result?.plan || "free").toLowerCase(),
+        status: (result?.status || "none").toLowerCase(),
+      },
+      { status: 200 }
+    );
   } catch (e) {
-    return Response.json({ plan: "free", status: "none", error: e?.message || "status error" }, { status: 200 });
+    // 🛟 fallback absoluto (nunca quebra o app)
+    return Response.json(
+      {
+        logged: false,
+        plan: "free",
+        status: "none",
+        error: "billing_status_error",
+      },
+      { status: 200 }
+    );
   }
 }
