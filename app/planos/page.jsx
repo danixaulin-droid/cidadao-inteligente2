@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+/* ======================
+   PLANOS
+====================== */
 const PLANS = [
   {
     key: "basic",
@@ -21,18 +24,38 @@ const PLANS = [
     name: "Pro",
     priceLabel: "R$ 24,90/mês",
     subtitle: "Para uso intenso e sem limites.",
-    perks: ["Upload ilimitado", "Mensagens ilimitadas", "Prioridade e melhor experiência"],
+    perks: [
+      "Upload ilimitado",
+      "Mensagens ilimitadas",
+      "Prioridade e melhor experiência",
+    ],
     highlight: false,
   },
 ];
 
+/* ======================
+   STATUS → UX HUMANA
+====================== */
+function getStatusUI(status) {
+  switch (status) {
+    case "active":
+      return { label: "Plano ativo", icon: "✅" };
+    case "pending":
+      return { label: "Pagamento em processamento", icon: "⏳" };
+    case "canceled":
+      return { label: "Assinatura cancelada", icon: "⚠️" };
+    default:
+      return { label: "Plano gratuito", icon: "🆓" };
+  }
+}
+
 async function safeJson(res) {
   const text = await res.text().catch(() => "");
-  if (!text) return { __empty: true };
+  if (!text) return {};
   try {
     return JSON.parse(text);
   } catch {
-    return { __invalid: true, raw: text };
+    return {};
   }
 }
 
@@ -43,51 +66,37 @@ export default function PlanosPage() {
   const [plan, setPlan] = useState("free");
   const [status, setStatus] = useState("none");
   const [loading, setLoading] = useState(true);
-
-  const [busyPlan, setBusyPlan] = useState(""); // basic|pro
+  const [busyPlan, setBusyPlan] = useState("");
   const [msg, setMsg] = useState("");
   const [authRequired, setAuthRequired] = useState(false);
 
-  const planLabel = useMemo(() => (plan || "free").toLowerCase(), [plan]);
-  const statusLabel = useMemo(() => (status || "none").toLowerCase(), [status]);
+  const planLabel = useMemo(() => plan || "free", [plan]);
+  const statusLabel = useMemo(() => status || "none", [status]);
+  const statusUI = getStatusUI(statusLabel);
 
   function goLogin() {
-    // volta para /planos depois do login
-    router.push(`/login?next=${encodeURIComponent(pathname || "/planos")}`);
+    router.push(`/login?next=${encodeURIComponent(pathname)}`);
   }
 
   async function loadStatus() {
-    setMsg("");
     setLoading(true);
+    setMsg("");
     setAuthRequired(false);
 
     try {
       const res = await fetch("/api/billing/status", { cache: "no-store" });
       const data = await safeJson(res);
 
-      // ✅ NÃO LOGADO → direciona para login (sem “falha ao ler usuário”)
       if (res.status === 401 || res.status === 403) {
         setAuthRequired(true);
         setPlan("free");
         setStatus("none");
-        setMsg("Entre na sua conta para ver seu plano e assinar.");
         return;
       }
 
-      if (!res.ok) {
-        const errMsg =
-          data?.error ||
-          data?.message ||
-          (data?.__invalid ? "Resposta inválida do servidor." : null) ||
-          "Falha ao carregar status do plano.";
-        throw new Error(errMsg);
-      }
-
-      // mesmo se vier vazio, não quebra
       setPlan((data?.plan || "free").toLowerCase());
       setStatus((data?.status || "none").toLowerCase());
-    } catch (e) {
-      setMsg(e?.message || "Falha ao carregar status do plano.");
+    } catch {
       setPlan("free");
       setStatus("none");
     } finally {
@@ -97,12 +106,11 @@ export default function PlanosPage() {
 
   useEffect(() => {
     loadStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function subscribe(pickedPlan) {
-    setMsg("");
     setBusyPlan(pickedPlan);
+    setMsg("");
 
     try {
       const res = await fetch("/api/billing/create-preapproval", {
@@ -111,251 +119,124 @@ export default function PlanosPage() {
         body: JSON.stringify({ plan: pickedPlan }),
       });
 
-      const data = await safeJson(res);
-
-      // ✅ NÃO LOGADO → vai pro login
       if (res.status === 401 || res.status === 403) {
-        setAuthRequired(true);
-        setMsg("Você precisa entrar na sua conta para assinar.");
         goLogin();
         return;
       }
 
-      if (!res.ok) {
-        const errMsg =
-          data?.error ||
-          data?.message ||
-          (data?.__invalid ? "Resposta inválida do servidor." : null) ||
-          "Falha ao iniciar pagamento.";
-        throw new Error(errMsg);
-      }
-
+      const data = await safeJson(res);
       const url = data?.init_point || data?.sandbox_init_point;
-      if (!url) throw new Error("Não recebi o link de pagamento do Mercado Pago.");
-
-      // ✅ redireciona para o MP
-      window.location.href = url;
-    } catch (e) {
-      setMsg(e?.message || "Erro ao iniciar pagamento.");
+      if (url) window.location.href = url;
+      else throw new Error();
+    } catch {
+      setMsg("Erro ao iniciar pagamento. Tente novamente.");
     } finally {
       setBusyPlan("");
     }
   }
 
-  const statusPill = (
-    <div
-      style={{
-        display: "flex",
-        gap: 10,
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: 12,
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.10)",
-        background: "rgba(0,0,0,0.18)",
-        flexWrap: "wrap",
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 900 }}>Seu plano atual</div>
-        <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
-          <b style={{ color: "var(--text)" }}>{planLabel}</b> • status:{" "}
-          <b style={{ color: "var(--text)" }}>{statusLabel}</b>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        {authRequired ? (
-          <button
-            className="btn btnPrimary"
-            onClick={goLogin}
-            style={{ borderRadius: 14, padding: "10px 14px", fontWeight: 950 }}
-          >
-            Entrar
-          </button>
-        ) : null}
-
-        <button
-          className="btn"
-          onClick={loadStatus}
-          disabled={loading}
-          title="Atualizar"
-          style={{ borderRadius: 14, padding: "10px 12px", minWidth: 44 }}
-        >
-          {loading ? "…" : "↻"}
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <main className="container" style={{ maxWidth: 980 }}>
-      <div
-        className="card"
-        style={{
-          padding: 18,
-          borderRadius: 22,
-          background:
-            "radial-gradient(900px 420px at 16% 0%, rgba(16,163,127,0.14), transparent 60%), radial-gradient(820px 420px at 80% 0%, rgba(59,130,246,0.10), transparent 62%), rgba(255,255,255,0.04)",
-        }}
-      >
-        <div style={{ display: "grid", gap: 14 }}>
-          <div style={{ display: "grid", gap: 8 }}>
-            <h1 style={{ margin: 0, fontSize: 36, letterSpacing: -0.7 }}>Planos</h1>
-            <p
-              className="muted"
-              style={{ margin: 0, fontSize: 15, lineHeight: 1.55, maxWidth: "70ch" }}
-            >
-              Desbloqueie upload de documentos, aumente seus limites e tenha uma experiência mais completa com a IA.
-            </p>
+      <div className="card" style={{ padding: 18, borderRadius: 22 }}>
+        <h1 style={{ fontSize: 36, marginBottom: 6 }}>Planos</h1>
+        <p className="muted" style={{ maxWidth: "70ch" }}>
+          Desbloqueie recursos avançados e tenha a melhor experiência com a IA.
+        </p>
+
+        {/* STATUS */}
+        <div
+          style={{
+            marginTop: 14,
+            padding: 14,
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(0,0,0,0.18)",
+          }}
+        >
+          <b>Seu plano atual</b>
+          <div className="muted" style={{ marginTop: 6 }}>
+            {statusUI.icon} <b>{statusUI.label}</b>
           </div>
 
-          {statusPill}
-
-          {msg ? (
-            <div
-              style={{
-                marginTop: 2,
-                padding: "10px 12px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(0,0,0,0.18)",
-              }}
-            >
-              ⚠️ {msg}
+          {statusLabel === "pending" && (
+            <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+              Assim que o Mercado Pago confirmar o pagamento, seu plano será ativado automaticamente.
             </div>
-          ) : null}
+          )}
 
-          {/* GRID de planos */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 14,
-              marginTop: 6,
-            }}
+          {authRequired && (
+            <button
+              className="btn btnPrimary"
+              onClick={goLogin}
+              style={{ marginTop: 10 }}
+            >
+              Entrar na conta
+            </button>
+          )}
+
+          <button
+            className="btn"
+            onClick={loadStatus}
+            disabled={loading}
+            style={{ marginTop: 10 }}
           >
-            {PLANS.map((p) => {
-              const isCurrent = planLabel === p.key && statusLabel === "active";
-              const isBusy = busyPlan === p.key;
-
-              return (
-                <div
-                  key={p.key}
-                  style={{
-                    borderRadius: 22,
-                    border: p.highlight
-                      ? "1px solid rgba(16,163,127,0.28)"
-                      : "1px solid rgba(255,255,255,0.10)",
-                    background: p.highlight
-                      ? "linear-gradient(180deg, rgba(16,163,127,0.14), rgba(255,255,255,0.03))"
-                      : "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))",
-                    boxShadow: "0 18px 60px rgba(0,0,0,0.35)",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* topo do card */}
-                  <div style={{ padding: 16, display: "grid", gap: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 22, fontWeight: 950, letterSpacing: -0.2 }}>{p.name}</div>
-                        <div className="muted" style={{ marginTop: 4, lineHeight: 1.4, fontSize: 13 }}>
-                          {p.subtitle}
-                        </div>
-                      </div>
-
-                      {isCurrent ? (
-                        <div
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            fontSize: 12,
-                            fontWeight: 900,
-                            border: "1px solid rgba(16,163,127,0.30)",
-                            background: "rgba(16,163,127,0.14)",
-                            color: "rgba(255,255,255,0.92)",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          ATIVO
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {/* preço */}
-                    <div style={{ display: "grid", gap: 2 }}>
-                      <div style={{ fontSize: 22, fontWeight: 950 }}>{p.priceLabel}</div>
-                      <div className="muted" style={{ fontSize: 12 }}>
-                        Renovação automática
-                      </div>
-                    </div>
-
-                    {/* perks */}
-                    <div style={{ display: "grid", gap: 10, marginTop: 6 }}>
-                      {p.perks.map((t, i) => (
-                        <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                          <div
-                            style={{
-                              width: 22,
-                              height: 22,
-                              borderRadius: 9,
-                              border: "1px solid rgba(255,255,255,0.12)",
-                              background: "rgba(0,0,0,0.18)",
-                              display: "grid",
-                              placeItems: "center",
-                              flex: "0 0 auto",
-                              marginTop: 1,
-                            }}
-                          >
-                            ✓
-                          </div>
-                          <div style={{ color: "rgba(229,231,235,0.88)", lineHeight: 1.35 }}>{t}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ações */}
-                  <div
-                    style={{
-                      padding: 14,
-                      borderTop: "1px solid rgba(255,255,255,0.08)",
-                      background: "rgba(0,0,0,0.18)",
-                      display: "flex",
-                      gap: 10,
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <button
-                      className={isCurrent ? "btn" : "btn btnPrimary"}
-                      onClick={() => (isCurrent ? null : subscribe(p.key))}
-                      disabled={isBusy || isCurrent}
-                      style={{
-                        padding: "12px 14px",
-                        borderRadius: 16,
-                        fontWeight: 950,
-                        minWidth: 180,
-                        opacity: isCurrent ? 0.85 : 1,
-                      }}
-                    >
-                      {isCurrent ? "Plano atual" : isBusy ? "Abrindo…" : `Assinar ${p.name}`}
-                    </button>
-
-                    <span className="muted" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                      Cancelamento pelo Mercado Pago
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="muted" style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
-            Dica: após pagar, toque em <b style={{ color: "var(--text)" }}>↻</b> para atualizar o plano.
-          </div>
+            {loading ? "Atualizando…" : "↻ Atualizar status"}
+          </button>
         </div>
+
+        {/* PLANOS */}
+        <div
+          style={{
+            marginTop: 18,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {PLANS.map((p) => {
+            const isCurrent = planLabel === p.key && statusLabel === "active";
+            const isBusy = busyPlan === p.key;
+
+            return (
+              <div
+                key={p.key}
+                style={{
+                  borderRadius: 22,
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  background: p.highlight
+                    ? "linear-gradient(180deg, rgba(16,163,127,0.18), rgba(255,255,255,0.03))"
+                    : "rgba(255,255,255,0.05)",
+                  padding: 16,
+                }}
+              >
+                <h2>{p.name}</h2>
+                <div style={{ fontSize: 22, fontWeight: 900 }}>{p.priceLabel}</div>
+                <div className="muted" style={{ marginBottom: 10 }}>
+                  {p.subtitle}
+                </div>
+
+                {p.perks.map((perk, i) => (
+                  <div key={i} className="muted">✓ {perk}</div>
+                ))}
+
+                <button
+                  className={isCurrent ? "btn" : "btn btnPrimary"}
+                  disabled={isCurrent || isBusy}
+                  onClick={() => subscribe(p.key)}
+                  style={{ marginTop: 14, width: "100%" }}
+                >
+                  {isCurrent ? "Plano atual" : isBusy ? "Abrindo…" : `Assinar ${p.name}`}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {msg && (
+          <div className="muted" style={{ marginTop: 14 }}>
+            ⚠️ {msg}
+          </div>
+        )}
       </div>
     </main>
   );
